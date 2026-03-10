@@ -656,8 +656,8 @@ ax.barh(x_pos - 0.2, cv_means, height=0.35, label='CV Accuracy',
         error_kw={'ecolor': MUTED_COL, 'capsize': 3})
 ax.barh(x_pos + 0.2, test_accs, height=0.35, label='Test Accuracy',
         color=ACCENT, alpha=0.85)
-for i, (cv, tst) in enumerate(zip(cv_means, test_accs)):
-    ax.text(cv + 0.5, i - 0.2, f'{cv:.1f}%', va='center',
+for i, (cv_val, tst) in enumerate(zip(cv_means, test_accs)):
+    ax.text(cv_val + 0.5, i - 0.2, f'{cv_val:.1f}%', va='center',
             color=TEXT_COL, fontsize=8)
     ax.text(tst + 0.5, i + 0.2, f'{tst:.1f}%', va='center',
             color=TEXT_COL, fontsize=8)
