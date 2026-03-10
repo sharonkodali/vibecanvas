@@ -554,7 +554,7 @@ code{font-family:var(--mono);font-size:0.9em;
   </div>
   <div class="nav-right">
     <span class="track-counter" id="db-badge">loading…</span>
-    <a class="gh-link" href="https://github.com/sharonkodali/vibecanvas" target="_blank">⭐ GitHub</a>
+    <a class="gh-link" href="https://github.com/YOUR_USERNAME/vibecanvas" target="_blank">⭐ GitHub</a>
   </div>
 </nav>
 
@@ -666,7 +666,7 @@ code{font-family:var(--mono);font-size:0.9em;
       every visual is driven by real audio data.
     </p>
     <div class="ab-btns">
-      <a class="ab-btn hi" href="https://github.com/sharonkodali/vibecanvas" target="_blank">
+      <a class="ab-btn hi" href="https://github.com/YOUR_USERNAME/vibecanvas" target="_blank">
         ★ View Source on GitHub
       </a>
       <button class="ab-btn" onclick="showPage('search')">🔍 Search 28k Songs</button>
@@ -823,8 +823,8 @@ code{font-family:var(--mono);font-size:0.9em;
         Kaggle — 30000 Spotify Songs (joebeachcapital)
       </a><br>
       <span style="color:var(--muted)">Source code</span>
-      <a href="https://github.com/sharonkodali/vibecanvas" target="_blank">
-        github.com/sharonkodali/vibecanvas
+      <a href="https://github.com/YOUR_USERNAME/vibecanvas" target="_blank">
+        github.com/YOUR_USERNAME/vibecanvas
       </a>
     </div>
   </div>
@@ -910,30 +910,43 @@ const PRESETS = [
 //  LOAD DATA  (reads tracks_mini.json from same folder)
 // ═══════════════════════════════════════════════════
 async function loadData() {
+  const MAP = r => ({
+    id: r.id, name: r.n, artist: r.a,
+    genre: r.g, subgenre: r.sg, popularity: r.pop,
+    danceability: r.d, energy: r.e, valence: r.v,
+    tempo: r.t, acousticness: r.ac, instrumentalness: r.ins,
+    speechiness: r.sp, liveness: r.li, loudness: r.lo,
+    loudness_norm: r.ln, tempo_norm: r.tn,
+    intensity_score: r.is, chill_score: r.cs,
+  });
   try {
-    const res = await fetch('tracks_mini.json');
-    const raw = await res.json();
-    TRACKS = raw.map(r => ({
-      id: r.id, name: r.n, artist: r.a,
-      genre: r.g, subgenre: r.sg, popularity: r.pop,
-      danceability: r.d, energy: r.e, valence: r.v,
-      tempo: r.t, acousticness: r.ac, instrumentalness: r.ins,
-      speechiness: r.sp, liveness: r.li, loudness: r.lo,
-      loudness_norm: r.ln, tempo_norm: r.tn,
-      intensity_score: r.is, chill_score: r.cs,
-    }));
-    document.getElementById('db-badge').textContent = `${TRACKS.length.toLocaleString()} tracks`;
-    document.getElementById('search-meta').textContent = `${TRACKS.length.toLocaleString()} tracks · type to search`;
+    // Load 4 small chunks in parallel — much more reliable on GitHub Pages
+    const chunks = await Promise.all(
+      [0,1,2,3].map(i => fetch('tracks_' + i + '.json').then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }))
+    );
+    TRACKS = chunks.flat().map(MAP);
+    document.getElementById('db-badge').textContent = TRACKS.length.toLocaleString() + ' tracks';
+    document.getElementById('search-meta').textContent = TRACKS.length.toLocaleString() + ' tracks · type to search';
     filteredTracks = TRACKS.slice(0, 80);
     renderTrackList();
-  } catch(e) {
-    // Demo mode with sample data if file not found
-    document.getElementById('db-badge').textContent = 'demo mode';
-    document.getElementById('search-meta').textContent = 'Place tracks_mini.json in same folder to load full dataset';
-    TRACKS = generateDemoTracks();
-    filteredTracks = TRACKS.slice(0,40);
+    return;
+  } catch(e) { console.log('Chunks failed, trying single file...', e); }
+  try {
+    const res = await fetch('tracks_mini.json');
+    if (!res.ok) throw new Error(res.status);
+    const raw = await res.json();
+    TRACKS = raw.map(MAP);
+    document.getElementById('db-badge').textContent = TRACKS.length.toLocaleString() + ' tracks';
+    document.getElementById('search-meta').textContent = TRACKS.length.toLocaleString() + ' tracks · type to search';
+    filteredTracks = TRACKS.slice(0, 80);
     renderTrackList();
-  }
+    return;
+  } catch(e) { console.log('Single file failed:', e); }
+  document.getElementById('db-badge').textContent = 'demo mode';
+  document.getElementById('search-meta').textContent = 'Could not load track data';
+  TRACKS = generateDemoTracks();
+  filteredTracks = TRACKS.slice(0, 40);
+  renderTrackList();
 }
 
 function generateDemoTracks() {
