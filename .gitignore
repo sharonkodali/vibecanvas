@@ -213,9 +213,6 @@ __marimo__/
 # Large raw datasets
 data/raw/
 
-# Model outputs and generated figures
-outputs/
-models/
 
 # Mac system files
 .DS_Store
