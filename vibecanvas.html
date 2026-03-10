@@ -3,28 +3,31 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>VibeCanvas — Spotify Art Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<title>VibeCanvas — Spotify Generative Art</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
-/* ── Reset ──────────────────────────────────────────── */
+/* ─── RESET & TOKENS ─────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:       #08080f;
-  --bg2:      #0e0e1a;
-  --bg3:      #141425;
-  --bg4:      #1a1a30;
-  --border:   #1f1f38;
-  --border2:  #2a2a48;
-  --text:     #e8e8f5;
-  --muted:    #6060a0;
-  --muted2:   #9090c0;
-  --gold:     #f0c040;
-  --teal:     #00e5c0;
-  --pink:     #ff3a6e;
-  --blue:     #4080ff;
-  --r:        10px;
-  --font:     'Space Grotesk', sans-serif;
-  --mono:     'DM Mono', monospace;
+  --bg:    #06060c;
+  --bg2:   #0b0b16;
+  --bg3:   #111120;
+  --bg4:   #181830;
+  --line:  #1c1c32;
+  --line2: #252542;
+  --text:  #eeeef8;
+  --dim:   #5555880;
+  --muted: #55558a;
+  --dim2:  #8888b8;
+  --teal:  #00ddb4;
+  --teal2: #00ffce;
+  --pink:  #ff3060;
+  --gold:  #ffcc44;
+  --blue:  #3d7fff;
+  --purp:  #9955ff;
+  --font:  'Syne', sans-serif;
+  --mono:  'JetBrains Mono', monospace;
+  --r:     10px;
 }
 html{scroll-behavior:smooth}
 body{
@@ -34,543 +37,565 @@ body{
   min-height:100vh;
   overflow-x:hidden;
 }
-
-/* ── Scanline texture ───────────────────────────────── */
-body::after{
-  content:'';position:fixed;inset:0;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
-  pointer-events:none;z-index:9999;
+/* subtle grain */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:0.4;
 }
 
-/* ── Nav ────────────────────────────────────────────── */
+/* ─── NAV ────────────────────────────────────────── */
 nav{
-  position:sticky;top:0;z-index:100;
-  background:rgba(8,8,15,0.92);
-  backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;
-  padding:0 32px;height:60px;gap:0;
+  position:sticky;top:0;z-index:200;height:56px;
+  background:rgba(6,6,12,0.88);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:0;padding:0 24px;
 }
-.nav-logo{
-  font-size:17px;font-weight:700;
-  letter-spacing:-0.5px;
-  color:var(--text);
-  margin-right:40px;
+.logo{
   display:flex;align-items:center;gap:10px;
+  font-size:15px;font-weight:800;letter-spacing:-0.3px;
+  margin-right:32px;color:var(--text);flex-shrink:0;
 }
-.nav-logo-dot{
-  width:10px;height:10px;border-radius:50%;
-  background:linear-gradient(135deg,var(--teal),var(--blue));
-  box-shadow:0 0 12px var(--teal);
+.logo-orb{
+  width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  background:conic-gradient(from 180deg, var(--teal), var(--blue), var(--purp), var(--teal));
+  box-shadow:0 0 16px rgba(0,221,180,0.5);
+  animation:spin 8s linear infinite;
 }
-.nav-tabs{display:flex;gap:4px;flex:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+.nav-tabs{display:flex;gap:2px;flex:1}
 .nav-tab{
-  padding:7px 18px;border-radius:6px;
-  font-size:13px;font-weight:500;
-  cursor:pointer;border:none;
-  background:transparent;color:var(--muted2);
-  transition:all .2s ease;letter-spacing:0.2px;
+  padding:6px 16px;border-radius:6px;border:none;
+  background:transparent;color:var(--muted);
+  font-family:var(--font);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .18s;white-space:nowrap;
 }
 .nav-tab:hover{color:var(--text);background:var(--bg3)}
 .nav-tab.active{color:var(--bg);background:var(--text)}
-.nav-badge{
-  font-family:var(--mono);font-size:10px;
-  color:var(--muted);border:1px solid var(--border2);
-  padding:3px 10px;border-radius:20px;
-  letter-spacing:0.5px;margin-left:auto;
+.nav-right{
+  margin-left:auto;display:flex;align-items:center;gap:10px;
 }
+.track-counter{
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+  border:1px solid var(--line2);padding:3px 10px;border-radius:20px;
+}
+.gh-link{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  color:var(--teal);border:1px solid rgba(0,221,180,0.25);
+  padding:4px 12px;border-radius:20px;
+  text-decoration:none;transition:all .18s;background:rgba(0,221,180,0.04);
+}
+.gh-link:hover{background:rgba(0,221,180,0.1);border-color:var(--teal);}
 
-/* ── Pages ──────────────────────────────────────────── */
-.page{display:none;min-height:calc(100vh - 60px)}
+/* ─── PAGES ──────────────────────────────────────── */
+.page{display:none}
 .page.active{display:block}
 
-/* ── SEARCH PAGE ──────────────────────────────────────*/
-.search-page{
+/* ════════════════════════════════════════════
+   PAGE 1 — SEARCH
+════════════════════════════════════════════ */
+.search-layout{
   display:grid;
-  grid-template-columns:420px 1fr;
-  min-height:calc(100vh - 60px);
+  grid-template-columns:400px 1fr;
+  height:calc(100vh - 56px);
 }
-@media(max-width:900px){.search-page{grid-template-columns:1fr}}
+@media(max-width:860px){.search-layout{grid-template-columns:1fr;height:auto}}
 
-/* Left panel */
+/* ── Search panel (left) */
 .search-panel{
   background:var(--bg2);
-  border-right:1px solid var(--border);
+  border-right:1px solid var(--line);
   display:flex;flex-direction:column;
-  height:calc(100vh - 60px);
-  position:sticky;top:60px;overflow:hidden;
+  height:calc(100vh - 56px);
+  position:sticky;top:56px;
 }
-.search-header{
-  padding:24px 24px 16px;
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
+.sp-head{
+  padding:20px 20px 0;flex-shrink:0;
 }
-.search-title{
-  font-size:13px;font-weight:600;
-  letter-spacing:2px;text-transform:uppercase;
-  color:var(--muted);font-family:var(--mono);
-  margin-bottom:14px;
+.sp-label{
+  font-family:var(--mono);font-size:9px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:10px;
 }
-.search-wrap{position:relative}
-.search-input{
-  width:100%;
-  background:var(--bg3);
-  border:1px solid var(--border2);
-  border-radius:8px;
-  padding:11px 40px 11px 16px;
-  color:var(--text);
-  font-family:var(--font);font-size:14px;
-  outline:none;
-  transition:border-color .2s;
+.sp-search{position:relative;margin-bottom:12px}
+.sp-input{
+  width:100%;background:var(--bg3);
+  border:1px solid var(--line2);border-radius:8px;
+  padding:10px 38px 10px 14px;
+  color:var(--text);font-family:var(--font);font-size:13px;
+  outline:none;transition:border-color .2s;
 }
-.search-input:focus{border-color:var(--teal)}
-.search-input::placeholder{color:var(--muted)}
-.search-icon{
-  position:absolute;right:12px;top:50%;
-  transform:translateY(-50%);
-  color:var(--muted);font-size:14px;pointer-events:none;
+.sp-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,221,180,0.08)}
+.sp-input::placeholder{color:var(--muted)}
+.sp-icon{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:13px;pointer-events:none;
 }
-.search-meta{
-  padding:10px 24px 0;
-  font-size:11px;font-family:var(--mono);
-  color:var(--muted);flex-shrink:0;
+.sp-meta{
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+  padding:0 20px 10px;flex-shrink:0;
 }
-.filter-bar{
-  display:flex;gap:6px;padding:12px 24px;
-  flex-shrink:0;overflow-x:auto;
-  border-bottom:1px solid var(--border);
+.genre-bar{
+  display:flex;gap:5px;padding:10px 20px;
+  flex-shrink:0;overflow-x:auto;border-bottom:1px solid var(--line);
 }
-.filter-bar::-webkit-scrollbar{height:0}
-.filter-chip{
-  padding:4px 12px;border-radius:20px;
-  font-size:11px;font-weight:600;
-  letter-spacing:0.5px;text-transform:uppercase;
-  border:1px solid var(--border2);
-  background:transparent;color:var(--muted2);
-  cursor:pointer;transition:all .18s;white-space:nowrap;
+.genre-bar::-webkit-scrollbar{height:0}
+.gchip{
+  padding:4px 11px;border-radius:20px;font-size:10px;font-weight:700;
+  letter-spacing:0.8px;text-transform:uppercase;
+  border:1px solid var(--line2);background:transparent;color:var(--dim2);
+  cursor:pointer;transition:all .15s;white-space:nowrap;font-family:var(--mono);
 }
-.filter-chip:hover{border-color:var(--border2);color:var(--text)}
-.filter-chip.active{color:var(--bg);border-color:transparent}
-
-/* Genre chip colors */
-.filter-chip[data-genre="all"].active{background:#ffffff;color:#000}
-.filter-chip[data-genre="pop"].active{background:#f0c040}
-.filter-chip[data-genre="rap"].active{background:#ff3a6e}
-.filter-chip[data-genre="rock"].active{background:#ff6b35}
-.filter-chip[data-genre="edm"].active{background:#00e5c0}
-.filter-chip[data-genre="r&b"].active{background:#a040ff}
-.filter-chip[data-genre="latin"].active{background:#00cc66}
+.gchip:hover{color:var(--text)}
+.gchip.on{border-color:transparent}
+.gchip[data-g="all"].on{background:rgba(255,255,255,0.12);color:#fff}
+.gchip[data-g="pop"].on{background:rgba(255,204,68,0.18);color:#ffcc44;border-color:rgba(255,204,68,0.3)}
+.gchip[data-g="rap"].on{background:rgba(255,48,96,0.18);color:#ff3060;border-color:rgba(255,48,96,0.3)}
+.gchip[data-g="rock"].on{background:rgba(255,107,53,0.18);color:#ff6b35;border-color:rgba(255,107,53,0.3)}
+.gchip[data-g="edm"].on{background:rgba(0,221,180,0.12);color:#00ddb4;border-color:rgba(0,221,180,0.3)}
+.gchip[data-g="r&b"].on{background:rgba(153,85,255,0.18);color:#9955ff;border-color:rgba(153,85,255,0.3)}
+.gchip[data-g="latin"].on{background:rgba(0,204,100,0.16);color:#00cc64;border-color:rgba(0,204,100,0.3)}
 
 /* Track list */
-.track-list{flex:1;overflow-y:auto;padding:8px 0}
-.track-list::-webkit-scrollbar{width:4px}
-.track-list::-webkit-scrollbar-track{background:transparent}
-.track-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-.track-item{
-  display:flex;align-items:center;gap:12px;
-  padding:10px 24px;cursor:pointer;
-  transition:background .15s;border-left:2px solid transparent;
-}
-.track-item:hover{background:var(--bg3)}
-.track-item.active{
-  background:var(--bg4);
-  border-left-color:var(--teal);
-}
-.track-num{
-  font-family:var(--mono);font-size:10px;
-  color:var(--muted);width:22px;text-align:right;
-  flex-shrink:0;
-}
-.track-art{
-  width:38px;height:38px;border-radius:6px;
-  flex-shrink:0;display:flex;align-items:center;
-  justify-content:center;font-size:15px;
-  position:relative;overflow:hidden;
-}
-.track-info{flex:1;min-width:0}
-.track-name{
-  font-size:13px;font-weight:500;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  color:var(--text);
-}
-.track-artist{
-  font-size:11px;color:var(--muted2);
-  font-family:var(--mono);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  margin-top:1px;
-}
-.track-genre-dot{
-  width:6px;height:6px;border-radius:50%;flex-shrink:0;
-}
-.track-pop{
-  font-family:var(--mono);font-size:10px;
-  color:var(--muted);flex-shrink:0;width:24px;text-align:right;
-}
-
-/* Right panel — art display */
-.art-display{
-  display:flex;flex-direction:column;
-  background:var(--bg);
-  min-height:calc(100vh - 60px);
-}
-.art-display-inner{
-  flex:1;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:40px;
-}
-.art-empty{
-  text-align:center;
-  opacity:0.4;
-}
-.art-empty-icon{font-size:56px;margin-bottom:16px}
-.art-empty-text{
-  font-size:14px;color:var(--muted2);
-  font-family:var(--mono);line-height:1.7;
-}
-
-/* Canvas + info */
-.art-container{
-  width:100%;max-width:560px;
-  display:flex;flex-direction:column;gap:20px;
-}
-.art-canvas-wrap{
-  position:relative;
-  border-radius:14px;overflow:hidden;
-  background:var(--bg2);
-  box-shadow:0 0 80px rgba(0,229,192,0.06),0 0 0 1px var(--border);
-}
-#searchCanvas{
-  display:block;width:100%;height:auto;
-}
-.art-vibe-badge{
-  position:absolute;bottom:14px;left:14px;
-  background:rgba(8,8,15,0.85);
-  backdrop-filter:blur(8px);
-  border:1px solid var(--border2);
-  border-radius:8px;padding:8px 14px;
-}
-.art-vibe-name{font-size:13px;font-weight:600;color:var(--text)}
-.art-vibe-genre{
-  font-size:10px;font-family:var(--mono);
-  color:var(--teal);margin-top:2px;
-}
-
-.art-track-info{
-  display:grid;grid-template-columns:1fr auto;
-  align-items:start;gap:16px;
-}
-.art-track-name{
-  font-size:22px;font-weight:700;
-  letter-spacing:-0.5px;line-height:1.2;
-}
-.art-track-artist{
-  font-size:14px;color:var(--muted2);
-  font-family:var(--mono);margin-top:4px;
-}
-.art-open-sandbox{
-  padding:9px 16px;
-  background:var(--bg3);border:1px solid var(--border2);
-  border-radius:8px;cursor:pointer;
-  font-family:var(--font);font-size:12px;font-weight:600;
-  color:var(--muted2);
-  transition:all .2s;white-space:nowrap;
-}
-.art-open-sandbox:hover{
-  border-color:var(--teal);color:var(--teal);
-}
-
-/* Feature bars */
-.feat-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;
-}
-.feat-row{display:flex;flex-direction:column;gap:4px}
-.feat-top{
-  display:flex;justify-content:space-between;align-items:baseline;
-}
-.feat-label{
-  font-size:10px;font-family:var(--mono);
-  color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;
-}
-.feat-val{
-  font-size:11px;font-family:var(--mono);
-  color:var(--teal);font-weight:500;
-}
-.feat-bar-bg{
-  height:3px;background:var(--border);
-  border-radius:2px;overflow:hidden;
-}
-.feat-bar-fill{
-  height:100%;border-radius:2px;
-  transition:width .6s cubic-bezier(.4,0,.2,1);
-}
-
-/* ── SANDBOX PAGE ─────────────────────────────────── */
-.sandbox-page{
+.track-list{flex:1;overflow-y:auto;padding:6px 0}
+.track-list::-webkit-scrollbar{width:3px}
+.track-list::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+.t-item{
   display:grid;
-  grid-template-columns:1fr 500px;
-  min-height:calc(100vh - 60px);
+  grid-template-columns:28px 36px 1fr 18px;
+  gap:10px;align-items:center;
+  padding:8px 20px;cursor:pointer;
+  transition:background .12s;
+  border-left:2px solid transparent;
 }
-@media(max-width:1100px){.sandbox-page{grid-template-columns:1fr}}
-
-.sandbox-canvas-side{
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:40px;background:var(--bg);
-  position:sticky;top:60px;
-  height:calc(100vh - 60px);
-  overflow:hidden;
+.t-item:hover{background:var(--bg3)}
+.t-item.active{background:var(--bg4);border-left-color:var(--teal)}
+.t-idx{font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right}
+.t-icon{
+  width:36px;height:36px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
 }
-#sandboxCanvas{
-  border-radius:14px;
-  box-shadow:0 0 100px rgba(0,229,192,0.08),0 0 0 1px var(--border);
-  max-width:100%;max-height:calc(100vh - 180px);
+.t-info{min-width:0}
+.t-name{
+  font-size:12px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--text);line-height:1.3;
 }
-.sandbox-vibe-tag{
-  margin-top:16px;
-  font-family:var(--mono);font-size:12px;
-  color:var(--muted2);letter-spacing:1px;
-}
-.sandbox-vibe-tag span{color:var(--teal);font-weight:500}
-
-/* Sandbox controls panel */
-.sandbox-controls{
-  background:var(--bg2);
-  border-left:1px solid var(--border);
-  overflow-y:auto;
-  padding:32px 28px;
-}
-.sandbox-controls::-webkit-scrollbar{width:4px}
-.sandbox-controls::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-.sandbox-header{margin-bottom:28px}
-.sandbox-title{
-  font-size:22px;font-weight:700;letter-spacing:-0.5px;
-  margin-bottom:6px;
-}
-.sandbox-subtitle{
-  font-size:12px;font-family:var(--mono);
-  color:var(--muted);line-height:1.6;
-}
-
-/* Section dividers */
-.ctrl-section{margin-bottom:28px}
-.ctrl-section-label{
-  font-size:10px;font-family:var(--mono);
-  color:var(--muted);text-transform:uppercase;letter-spacing:2px;
-  margin-bottom:14px;
-  display:flex;align-items:center;gap:8px;
-}
-.ctrl-section-label::after{
-  content:'';flex:1;height:1px;background:var(--border);
-}
-
-/* Sliders */
-.slider-row{margin-bottom:16px}
-.slider-top{
-  display:flex;justify-content:space-between;
-  align-items:baseline;margin-bottom:7px;
-}
-.slider-name{
-  font-size:12px;font-weight:500;color:var(--text);
-}
-.slider-desc{
-  font-size:10px;font-family:var(--mono);color:var(--muted);
+.t-artist{
+  font-size:10px;color:var(--dim2);font-family:var(--mono);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   margin-top:1px;
 }
-.slider-number{
-  font-size:13px;font-family:var(--mono);
-  color:var(--teal);font-weight:500;
-  min-width:42px;text-align:right;
-}
-input[type=range]{
-  width:100%;height:4px;
-  appearance:none;background:var(--border2);
-  border-radius:2px;outline:none;cursor:pointer;
-  transition:opacity .2s;
-}
-input[type=range]:hover{opacity:0.9}
-input[type=range]::-webkit-slider-thumb{
-  appearance:none;
-  width:16px;height:16px;border-radius:50%;
-  background:var(--teal);
-  border:2px solid var(--bg);
-  box-shadow:0 0 0 2px rgba(0,229,192,0.25);
-  transition:all .2s;
-}
-input[type=range]::-webkit-slider-thumb:hover{
-  transform:scale(1.2);
-  box-shadow:0 0 0 4px rgba(0,229,192,0.15);
-}
+.t-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;justify-self:end}
 
-/* Preset cards */
-.preset-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+/* ── Art display (right) */
+.art-panel{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:40px;min-height:calc(100vh - 56px);
+  background:var(--bg);
+}
+.art-empty{text-align:center;opacity:0.35}
+.art-empty-glyph{font-size:52px;margin-bottom:14px;display:block}
+.art-empty-text{
+  font-family:var(--mono);font-size:11px;color:var(--dim2);line-height:1.8;
+}
+.art-card{width:100%;max-width:520px}
+.art-img-wrap{
+  position:relative;border-radius:14px;overflow:hidden;
+  box-shadow:0 0 0 1px var(--line),0 20px 80px rgba(0,0,0,0.6);
   margin-bottom:20px;
 }
-.preset-card{
-  padding:10px 12px;
-  background:var(--bg3);border:1px solid var(--border);
-  border-radius:8px;cursor:pointer;
-  transition:all .18s;text-align:left;
+.art-img-wrap img{width:100%;display:block;border-radius:14px}
+.art-overlay{
+  position:absolute;bottom:14px;left:14px;right:14px;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:10px;
 }
-.preset-card:hover{
-  border-color:var(--border2);
-  background:var(--bg4);
-  transform:translateY(-1px);
+.art-vibe-pill{
+  background:rgba(6,6,12,0.82);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:8px;padding:8px 14px;
 }
-.preset-card.active{
-  border-color:var(--teal);
-  background:rgba(0,229,192,0.04);
+.art-vibe-name{font-size:12px;font-weight:700;color:var(--text);line-height:1.2}
+.art-vibe-genre{font-size:9px;font-family:var(--mono);margin-top:3px}
+.art-sandbox-btn{
+  background:rgba(0,221,180,0.12);backdrop-filter:blur(10px);
+  border:1px solid rgba(0,221,180,0.3);border-radius:8px;
+  padding:8px 14px;cursor:pointer;color:var(--teal);
+  font-family:var(--font);font-size:11px;font-weight:700;
+  transition:all .18s;white-space:nowrap;
 }
+.art-sandbox-btn:hover{background:rgba(0,221,180,0.22);border-color:var(--teal)}
+.art-meta{margin-bottom:16px}
+.art-track-name{
+  font-size:20px;font-weight:800;letter-spacing:-0.3px;line-height:1.15;
+  margin-bottom:4px;
+}
+.art-track-artist{font-size:12px;color:var(--dim2);font-family:var(--mono)}
+.art-track-stats{
+  font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:6px;
+}
+/* Feature bars */
+.feat-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:10px;padding:16px;
+}
+.feat-row{}
+.feat-top{display:flex;justify-content:space-between;margin-bottom:5px}
+.feat-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.feat-val{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--teal)}
+.feat-track{height:2px;background:var(--line2);border-radius:1px;overflow:hidden}
+.feat-fill{height:100%;border-radius:1px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+
+/* ════════════════════════════════════════════
+   PAGE 2 — SANDBOX
+════════════════════════════════════════════ */
+.sandbox-layout{
+  display:grid;grid-template-columns:1fr 460px;
+  min-height:calc(100vh - 56px);
+}
+@media(max-width:1050px){.sandbox-layout{grid-template-columns:1fr}}
+.sb-canvas-side{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:32px;background:var(--bg);
+  position:sticky;top:56px;
+  height:calc(100vh - 56px);
+}
+#sandboxCanvas{
+  border-radius:16px;max-width:100%;max-height:calc(100vh - 160px);
+  box-shadow:0 0 0 1px var(--line),0 0 80px rgba(0,221,180,0.05);
+}
+.sb-vibe-row{
+  margin-top:14px;display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:11px;color:var(--dim2);
+}
+.sb-vibe-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--teal);
+  animation:pulse 1.5s ease infinite;flex-shrink:0;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+.sb-vibe-label{color:var(--teal);font-weight:500}
+
+/* Controls panel */
+.sb-controls{
+  background:var(--bg2);border-left:1px solid var(--line);
+  overflow-y:auto;padding:28px 24px 40px;
+}
+.sb-controls::-webkit-scrollbar{width:3px}
+.sb-controls::-webkit-scrollbar-thumb{background:var(--line2);border-radius:2px}
+.sb-head{margin-bottom:24px}
+.sb-title{font-size:20px;font-weight:800;letter-spacing:-0.3px;margin-bottom:4px}
+.sb-sub{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.7}
+
+/* Section headers */
+.ctrl-hd{
+  font-family:var(--mono);font-size:9px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:8px;
+  margin:20px 0 12px;
+}
+.ctrl-hd::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* Preset grid */
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px}
+.preset-btn{
+  padding:9px 12px;background:var(--bg3);
+  border:1px solid var(--line);border-radius:8px;
+  cursor:pointer;text-align:left;transition:all .15s;
+}
+.preset-btn:hover{border-color:var(--line2);background:var(--bg4);transform:translateY(-1px)}
+.preset-btn.on{border-color:var(--teal);background:rgba(0,221,180,0.05)}
 .preset-dot{
-  width:8px;height:8px;border-radius:50%;
-  display:inline-block;margin-right:6px;
-  vertical-align:middle;
+  width:7px;height:7px;border-radius:50%;
+  display:inline-block;margin-right:5px;vertical-align:middle;
 }
-.preset-name{
-  font-size:12px;font-weight:600;color:var(--text);
+.preset-name{font-size:11px;font-weight:700;color:var(--text)}
+.preset-tag{font-size:9px;font-family:var(--mono);color:var(--muted);margin-top:2px}
+
+/* Sliders */
+.sl-row{margin-bottom:14px}
+.sl-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:7px}
+.sl-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.2}
+.sl-hint{font-size:9px;font-family:var(--mono);color:var(--muted);margin-top:1px}
+.sl-val{
+  font-family:var(--mono);font-size:12px;
+  color:var(--teal);font-weight:500;min-width:52px;text-align:right;
 }
-.preset-tags{
-  font-size:9px;font-family:var(--mono);
-  color:var(--muted);margin-top:3px;letter-spacing:0.3px;
+input[type=range]{
+  width:100%;height:3px;appearance:none;
+  background:var(--line2);border-radius:2px;outline:none;cursor:pointer;
 }
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--teal);border:2px solid var(--bg);
+  box-shadow:0 0 0 2px rgba(0,221,180,0.2);
+  transition:all .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{
+  transform:scale(1.25);box-shadow:0 0 0 4px rgba(0,221,180,0.15);
+}
+
+/* Palette swatches */
+.palette-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px}
+.pal-swatch{
+  width:28px;height:28px;border-radius:6px;cursor:pointer;
+  border:2px solid transparent;transition:all .15s;position:relative;
+}
+.pal-swatch:hover{transform:scale(1.15)}
+.pal-swatch.on{border-color:#fff;box-shadow:0 0 0 1px #fff}
+.pal-auto{
+  background:var(--bg3);border:1px dashed var(--line2);
+  color:var(--muted);font-size:9px;font-family:var(--mono);
+  display:flex;align-items:center;justify-content:center;
+}
+.pal-auto.on{border-color:var(--teal);color:var(--teal)}
 
 /* Action buttons */
-.btn-row{display:flex;gap:8px;margin-top:8px}
-.btn-primary{
-  flex:1;padding:12px;
-  background:var(--teal);border:none;
-  border-radius:8px;color:#000;
-  font-family:var(--font);font-size:13px;font-weight:700;
-  cursor:pointer;transition:all .2s;
-  letter-spacing:0.3px;
+.sb-btn-row{display:flex;gap:8px;margin-top:20px}
+.btn-rand{
+  flex:1;padding:12px;background:var(--teal);border:none;
+  border-radius:8px;color:var(--bg);font-family:var(--font);
+  font-size:13px;font-weight:800;cursor:pointer;transition:all .18s;
 }
-.btn-primary:hover{
-  background:#00ffda;
-  box-shadow:0 4px 20px rgba(0,229,192,0.3);
-  transform:translateY(-1px);
+.btn-rand:hover{background:var(--teal2);box-shadow:0 4px 24px rgba(0,221,180,0.35);transform:translateY(-1px)}
+.btn-reset{
+  padding:12px 16px;background:var(--bg3);
+  border:1px solid var(--line2);border-radius:8px;
+  color:var(--dim2);font-family:var(--font);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;
 }
-.btn-secondary2{
-  padding:12px 16px;
-  background:var(--bg3);border:1px solid var(--border2);
-  border-radius:8px;color:var(--muted2);
-  font-family:var(--font);font-size:13px;font-weight:600;
-  cursor:pointer;transition:all .2s;
-}
-.btn-secondary2:hover{border-color:var(--border2);color:var(--text)}
+.btn-reset:hover{color:var(--text);border-color:var(--line2)}
 
-/* Color scheme picker */
-.scheme-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.scheme-swatch{
-  width:32px;height:32px;border-radius:6px;
-  cursor:pointer;border:2px solid transparent;
-  transition:all .18s;
-}
-.scheme-swatch.active{
-  border-color:white;
-  box-shadow:0 0 0 1px white;
-}
-.scheme-swatch:hover{transform:scale(1.1)}
+/* ════════════════════════════════════════════
+   PAGE 3 — ABOUT
+════════════════════════════════════════════ */
+.about-wrap{max-width:1080px;margin:0 auto;padding:56px 32px 100px}
 
-/* Randomize pulse animation */
-@keyframes pulse-teal{
-  0%,100%{box-shadow:0 0 0 0 rgba(0,229,192,0.4)}
-  50%{box-shadow:0 0 0 8px rgba(0,229,192,0)}
+/* Hero */
+.ab-hero{
+  text-align:center;padding-bottom:56px;
+  border-bottom:1px solid var(--line);margin-bottom:56px;
 }
-.animate-pulse{animation:pulse-teal 2s infinite}
+.ab-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--teal);border:1px solid rgba(0,221,180,0.2);
+  padding:5px 14px;border-radius:20px;background:rgba(0,221,180,0.04);
+  margin-bottom:20px;
+}
+.ab-tag::before{content:'●';font-size:6px}
+.ab-h1{
+  font-size:clamp(38px,5.5vw,64px);font-weight:800;
+  letter-spacing:-2px;line-height:1.05;margin-bottom:18px;
+}
+.ab-h1 em{font-style:normal;
+  background:linear-gradient(90deg,var(--teal),var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.ab-lead{
+  font-family:var(--mono);font-size:12px;color:var(--dim2);
+  line-height:1.85;max-width:560px;margin:0 auto 32px;font-weight:300;
+}
+.ab-btns{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.ab-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:10px 20px;border-radius:8px;font-size:12px;font-weight:700;
+  font-family:var(--font);cursor:pointer;transition:all .18s;text-decoration:none;
+  border:1px solid var(--line2);color:var(--dim2);background:var(--bg3);
+}
+.ab-btn:hover{border-color:var(--teal);color:var(--teal)}
+.ab-btn.hi{background:var(--teal);color:var(--bg);border-color:var(--teal);}
+.ab-btn.hi:hover{background:var(--teal2);box-shadow:0 4px 20px rgba(0,221,180,0.3)}
 
-/* Render indicator */
-.render-dot{
-  display:inline-block;width:6px;height:6px;
-  border-radius:50%;background:var(--teal);
-  margin-right:6px;
-  animation:blink 1s steps(1) infinite;
+/* Stats */
+.ab-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+  margin-bottom:56px;
 }
-@keyframes blink{50%{opacity:0}}
+@media(max-width:640px){.ab-stats{grid-template-columns:repeat(2,1fr)}}
+.stat{
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:10px;padding:20px 16px;text-align:center;
+  transition:border-color .2s;
+}
+.stat:hover{border-color:var(--line2)}
+.stat-n{
+  font-size:34px;font-weight:800;letter-spacing:-1.5px;
+  background:linear-gradient(135deg,var(--teal),var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  display:block;margin-bottom:4px;
+}
+.stat-l{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
 
-/* Loading shimmer */
-.shimmer{
-  background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);
-  background-size:200% 100%;
-  animation:shimmer 1.5s infinite;
+/* Section */
+.ab-sec{margin-bottom:56px}
+.ab-eyebrow{
+  font-family:var(--mono);font-size:9px;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;
 }
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ab-eyebrow::after{content:'';flex:1;height:1px;background:var(--line)}
+.ab-sec-title{font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px}
+.ab-sec-sub{
+  font-family:var(--mono);font-size:11px;color:var(--dim2);
+  line-height:1.7;margin-bottom:24px;
+}
+.ab-sec-sub code{color:var(--teal);background:rgba(0,221,180,0.07);padding:1px 6px;border-radius:4px}
 
-/* Tooltip */
-.tip{
-  position:relative;display:inline-block;
+/* Step timeline */
+.steps{display:flex;flex-direction:column;gap:2px}
+.step{
+  display:grid;grid-template-columns:52px 1fr;
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:10px;overflow:hidden;transition:all .18s;
 }
-.tip::after{
-  content:attr(data-tip);
-  position:absolute;left:50%;bottom:calc(100%+6px);
-  transform:translateX(-50%);
-  background:var(--bg4);border:1px solid var(--border2);
-  color:var(--text);font-size:10px;font-family:var(--mono);
-  padding:4px 8px;border-radius:4px;white-space:nowrap;
-  pointer-events:none;opacity:0;transition:opacity .15s;
-  z-index:50;
+.step:hover{border-color:var(--line2);transform:translateX(3px)}
+.step-n{
+  background:var(--bg3);display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+  border-right:1px solid var(--line);min-height:62px;font-weight:500;
 }
-.tip:hover::after{opacity:1}
+.step-body{padding:12px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.step-lbl{font-size:13px;font-weight:700;min-width:150px;color:var(--text)}
+.step-desc{font-family:var(--mono);font-size:11px;color:var(--dim2);flex:1;line-height:1.65}
+.step-tag{
+  font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:20px;
+  border:1px solid;white-space:nowrap;flex-shrink:0;
+}
+
+/* Chart grid */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.chart-grid{grid-template-columns:1fr}}
+.chart-tile{
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:10px;overflow:hidden;cursor:zoom-in;
+  transition:all .2s;
+}
+.chart-tile:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,221,180,0.07)}
+.chart-tile img{width:100%;display:block}
+.chart-cap{
+  padding:10px 14px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:10px;color:var(--dim2);
+  display:flex;align-items:center;gap:7px;
+}
+.chart-cap::before{
+  content:'';width:5px;height:5px;border-radius:50%;
+  background:var(--teal);flex-shrink:0;
+}
+.chart-tile.wide{grid-column:1/-1}
+
+/* Art layer explainer */
+.layer-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:640px){.layer-grid{grid-template-columns:1fr}}
+.layer{
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:8px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px;
+  transition:border-color .18s;
+}
+.layer:hover{border-color:var(--line2)}
+.layer-emoji{font-size:18px;flex-shrink:0;line-height:1}
+.layer-lbl{font-size:12px;font-weight:700;margin-bottom:3px;color:var(--text)}
+.layer-desc{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6}
+
+/* Tech chips */
+.tech-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px}
+.chip{
+  font-family:var(--mono);font-size:10px;padding:4px 12px;
+  border-radius:20px;border:1px solid var(--line2);color:var(--dim2);background:var(--bg3);
+}
+.chip.hi{border-color:rgba(0,221,180,0.3);color:var(--teal);background:rgba(0,221,180,0.05)}
+.source-box{
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:10px;padding:18px 22px;
+  font-family:var(--mono);font-size:11px;color:var(--dim2);line-height:2.2;
+}
+.source-box a{color:var(--teal);text-decoration:none}
+.source-box a:hover{text-decoration:underline}
+
+/* ─── LIGHTBOX ───────────────────────────────────── */
+.lb{
+  display:none;position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,0.93);align-items:center;justify-content:center;
+  cursor:zoom-out;
+}
+.lb.open{display:flex}
+.lb img{max-width:92vw;max-height:90vh;border-radius:10px}
+.lb-x{
+  position:fixed;top:18px;right:22px;
+  background:rgba(255,255,255,0.08);border:none;
+  color:#fff;font-size:22px;width:40px;height:40px;
+  border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.lb-x:hover{background:rgba(255,255,255,0.16)}
+
+/* ─── SHARED UTILS ───────────────────────────────── */
+code{font-family:var(--mono);font-size:0.9em;
+  color:var(--teal);background:rgba(0,221,180,0.07);
+  padding:1px 5px;border-radius:3px;}
 </style>
 </head>
 <body>
 
-<!-- ── NAV ──────────────────────────────────────────── -->
+<!-- ── NAV ─────────────────────────────────────────── -->
 <nav>
-  <div class="nav-logo">
-    <div class="nav-logo-dot"></div>
+  <div class="logo">
+    <div class="logo-orb"></div>
     VibeCanvas
   </div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('search')">🔍 Song Search</button>
-    <button class="nav-tab" onclick="showPage('sandbox')">🎛 Audio Sandbox</button>
+    <button class="nav-tab" onclick="showPage('sandbox')">🎛 Sandbox</button>
+    <button class="nav-tab" onclick="showPage('about')">📊 About</button>
   </div>
-  <div class="nav-badge" id="db-badge">loading...</div>
+  <div class="nav-right">
+    <span class="track-counter" id="db-badge">loading…</span>
+    <a class="gh-link" href="https://github.com/sharonkodali/vibecanvas" target="_blank">⭐ GitHub</a>
+  </div>
 </nav>
 
 <!-- ════════════════════════════════════════════════════
-     PAGE 1 — SONG SEARCH
+     PAGE 1 — SEARCH
 ════════════════════════════════════════════════════ -->
 <div class="page active" id="page-search">
-<div class="search-page">
+<div class="search-layout">
 
-  <!-- Left: search panel -->
   <div class="search-panel">
-    <div class="search-header">
-      <div class="search-title">Search Tracks</div>
-      <div class="search-wrap">
-        <input class="search-input" id="searchInput" type="text"
-               placeholder="Song name or artist..."
+    <div class="sp-head">
+      <div class="sp-label">Search Tracks</div>
+      <div class="sp-search">
+        <input class="sp-input" id="searchInput" type="text"
+               placeholder="Song title or artist name…"
                autocomplete="off" spellcheck="false"/>
-        <span class="search-icon">⌕</span>
+        <span class="sp-icon">⌕</span>
       </div>
     </div>
-    <div class="search-meta" id="search-meta">28,351 tracks loaded</div>
-    <div class="filter-bar">
-      <button class="filter-chip active" data-genre="all" onclick="setGenreFilter('all',this)">All</button>
-      <button class="filter-chip" data-genre="pop"   onclick="setGenreFilter('pop',this)"  >Pop</button>
-      <button class="filter-chip" data-genre="rap"   onclick="setGenreFilter('rap',this)"  >Rap</button>
-      <button class="filter-chip" data-genre="rock"  onclick="setGenreFilter('rock',this)" >Rock</button>
-      <button class="filter-chip" data-genre="edm"   onclick="setGenreFilter('edm',this)"  >EDM</button>
-      <button class="filter-chip" data-genre="r&b"   onclick="setGenreFilter('r&b',this)"  >R&amp;B</button>
-      <button class="filter-chip" data-genre="latin" onclick="setGenreFilter('latin',this)">Latin</button>
+    <div class="sp-meta" id="search-meta">Loading…</div>
+    <div class="genre-bar">
+      <button class="gchip on" data-g="all"   onclick="setGenre('all',this)">All</button>
+      <button class="gchip"    data-g="pop"   onclick="setGenre('pop',this)">Pop</button>
+      <button class="gchip"    data-g="rap"   onclick="setGenre('rap',this)">Rap</button>
+      <button class="gchip"    data-g="rock"  onclick="setGenre('rock',this)">Rock</button>
+      <button class="gchip"    data-g="edm"   onclick="setGenre('edm',this)">EDM</button>
+      <button class="gchip"    data-g="r&b"   onclick="setGenre('r&b',this)">R&amp;B</button>
+      <button class="gchip"    data-g="latin" onclick="setGenre('latin',this)">Latin</button>
     </div>
     <div class="track-list" id="trackList">
-      <div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px">
-        Loading dataset...
+      <div style="padding:40px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted)">
+        Loading 28,351 tracks…
       </div>
     </div>
   </div>
 
-  <!-- Right: art display -->
-  <div class="art-display">
-    <div class="art-display-inner" id="artDisplayInner">
-      <div class="art-empty">
-        <div class="art-empty-icon">🎨</div>
-        <div class="art-empty-text">
-          Search or click a track<br>to generate its visual fingerprint
-        </div>
+  <div class="art-panel" id="artPanel">
+    <div class="art-empty">
+      <span class="art-empty-glyph">🎨</span>
+      <div class="art-empty-text">
+        Click any track to generate<br>its audio visual fingerprint
       </div>
     </div>
   </div>
@@ -582,74 +607,238 @@ input[type=range]::-webkit-slider-thumb:hover{
      PAGE 2 — SANDBOX
 ════════════════════════════════════════════════════ -->
 <div class="page" id="page-sandbox">
-<div class="sandbox-page">
+<div class="sandbox-layout">
 
-  <!-- Left: live canvas -->
-  <div class="sandbox-canvas-side">
-    <canvas id="sandboxCanvas" width="500" height="500"></canvas>
-    <div class="sandbox-vibe-tag">
-      <span class="render-dot"></span>
-      Detected vibe: <span id="sandbox-vibe-label">—</span>
+  <div class="sb-canvas-side">
+    <canvas id="sandboxCanvas" width="480" height="480"></canvas>
+    <div class="sb-vibe-row">
+      <div class="sb-vibe-dot"></div>
+      <span>Detected vibe:</span>
+      <span class="sb-vibe-label" id="sandbox-vibe-label">—</span>
     </div>
   </div>
 
-  <!-- Right: controls -->
-  <div class="sandbox-controls">
-    <div class="sandbox-header">
-      <div class="sandbox-title">Audio Sandbox</div>
-      <div class="sandbox-subtitle">
-        Adjust any audio feature and watch the<br>
-        generative art update in real time.
+  <div class="sb-controls">
+    <div class="sb-head">
+      <div class="sb-title">Audio Sandbox</div>
+      <div class="sb-sub">
+        Drag any slider — the art redraws live.<br>
+        Every visual layer maps to a real audio feature.
       </div>
     </div>
 
-    <!-- Presets -->
-    <div class="ctrl-section">
-      <div class="ctrl-section-label">Mood Presets</div>
-      <div class="preset-grid" id="presetGrid">
-        <!-- filled by JS -->
-      </div>
-    </div>
+    <div class="ctrl-hd">Mood Presets</div>
+    <div class="preset-grid" id="presetGrid"></div>
 
-    <!-- Core features -->
-    <div class="ctrl-section">
-      <div class="ctrl-section-label">Core Features</div>
-      <div id="sliders-core"></div>
-    </div>
+    <div class="ctrl-hd">Core Features</div>
+    <div id="sliders-core"></div>
 
-    <!-- Texture features -->
-    <div class="ctrl-section">
-      <div class="ctrl-section-label">Texture &amp; Timbre</div>
-      <div id="sliders-texture"></div>
-    </div>
+    <div class="ctrl-hd">Texture &amp; Timbre</div>
+    <div id="sliders-texture"></div>
 
-    <!-- Rhythm features -->
-    <div class="ctrl-section">
-      <div class="ctrl-section-label">Rhythm &amp; Structure</div>
-      <div id="sliders-rhythm"></div>
-    </div>
+    <div class="ctrl-hd">Rhythm</div>
+    <div id="sliders-rhythm"></div>
 
-    <!-- Color scheme -->
-    <div class="ctrl-section">
-      <div class="ctrl-section-label">Color Palette Override</div>
-      <div class="scheme-row" id="schemeRow">
-        <!-- filled by JS -->
-      </div>
-    </div>
+    <div class="ctrl-hd">Color Palette</div>
+    <div class="palette-row" id="schemeRow"></div>
 
-    <!-- Actions -->
-    <div class="btn-row">
-      <button class="btn-primary animate-pulse" onclick="randomizeAll()">⚡ Randomize</button>
-      <button class="btn-secondary2" onclick="sendToSandbox(null)">↺ Reset</button>
+    <div class="sb-btn-row">
+      <button class="btn-rand" onclick="randomizeAll()">⚡ Randomize</button>
+      <button class="btn-reset" onclick="sendToSandbox(null)">↺ Reset</button>
     </div>
-
   </div>
+
 </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     OFFSCREEN CANVAS for search page art
+<!-- ════════════════════════════════════════════════════
+     PAGE 3 — ABOUT
 ════════════════════════════════════════════════════ -->
+<div class="page" id="page-about">
+<div class="about-wrap">
+
+  <div class="ab-hero">
+    <div class="ab-tag">Portfolio Project · Data Science + Generative Art</div>
+    <h1 class="ab-h1">Music has a<br><em>visual fingerprint</em></h1>
+    <p class="ab-lead">
+      An end-to-end ML pipeline trained on 28,351 real Spotify tracks.
+      From a raw messy CSV to a genre classifier to an interactive art engine —
+      every visual is driven by real audio data.
+    </p>
+    <div class="ab-btns">
+      <a class="ab-btn hi" href="https://github.com/sharonkodali/vibecanvas" target="_blank">
+        ★ View Source on GitHub
+      </a>
+      <button class="ab-btn" onclick="showPage('search')">🔍 Search 28k Songs</button>
+      <button class="ab-btn" onclick="showPage('sandbox')">🎛 Open Sandbox</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="ab-sec">
+    <div class="ab-eyebrow">By the numbers</div>
+    <div class="ab-stats">
+      <div class="stat"><span class="stat-n">28,351</span><span class="stat-l">Tracks Analyzed</span></div>
+      <div class="stat"><span class="stat-n">54.1%</span><span class="stat-l">RF Accuracy</span></div>
+      <div class="stat"><span class="stat-n">3×</span><span class="stat-l">Above Baseline</span></div>
+      <div class="stat"><span class="stat-n">18</span><span class="stat-l">ML Features</span></div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="ab-sec">
+    <div class="ab-eyebrow">ML Pipeline</div>
+    <div class="ab-sec-title">7-stage data science workflow</div>
+    <div class="ab-sec-sub">
+      Built entirely from scratch in Python. Every stage is documented and reproducible via <code>src/pipeline.py</code>.
+      No AutoML. No shortcuts.
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-body">
+          <div class="step-lbl">Data Ingestion</div>
+          <div class="step-desc">Loaded 32,833 rows from the Kaggle Spotify CSV using pandas. 23 raw columns including 9 Spotify audio features per track.</div>
+          <span class="step-tag" style="color:#ffcc44;border-color:rgba(255,204,68,0.3)">pandas</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-body">
+          <div class="step-lbl">Data Cleaning</div>
+          <div class="step-desc">Dropped 5 null rows, deduplicated 4,476 track IDs, removed 1 bad-duration track. Full IQR outlier audit on all audio features. Validated all [0,1] ranges — zero violations.</div>
+          <span class="step-tag" style="color:#ff3060;border-color:rgba(255,48,96,0.3)">4,482 rows removed</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-body">
+          <div class="step-lbl">EDA</div>
+          <div class="step-desc">Skewness analysis flagged 4 features needing transformation. Correlation matrix: acousticness is the strongest popularity predictor. Genre balance verified across 6 classes.</div>
+          <span class="step-tag" style="color:#00ddb4;border-color:rgba(0,221,180,0.3)">Seaborn · Matplotlib</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-body">
+          <div class="step-lbl">Feature Engineering</div>
+          <div class="step-desc">Created 9 interaction features: <em>intensity_score</em>, <em>chill_score</em>, <em>vocal_score</em>, <em>energy_valence_ratio</em>, and more. Log-transformed 4 skewed features. Min-max normalized loudness and tempo.</div>
+          <span class="step-tag" style="color:#9955ff;border-color:rgba(153,85,255,0.3)">9 new features</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">05</div>
+        <div class="step-body">
+          <div class="step-lbl">PCA</div>
+          <div class="step-desc">StandardScaler → PCA on 18 features. 9 components capture 95% of variance. 2D projection (47% variance) used for genre scatter visualization.</div>
+          <span class="step-tag" style="color:#3d7fff;border-color:rgba(61,127,255,0.3)">18D → 2D</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">06</div>
+        <div class="step-body">
+          <div class="step-lbl">KMeans Clustering</div>
+          <div class="step-desc">Elbow method found k=4 natural clusters — fewer than the 6 labeled genres. This confirms that genre boundaries heavily overlap in audio feature space. An honest and interesting finding.</div>
+          <span class="step-tag" style="color:#00cc64;border-color:rgba(0,204,100,0.3)">k=4 elbow</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">07</div>
+        <div class="step-body">
+          <div class="step-lbl">Classification</div>
+          <div class="step-desc">Random Forest (100 trees, 5-fold CV): <strong>54.1% accuracy</strong> on 6-class genre prediction — 3.2× the 16.7% random baseline. Benchmarked against Logistic Regression (46%) and Gradient Boosting (52.5%).</div>
+          <span class="step-tag" style="color:#ff3060;border-color:rgba(255,48,96,0.3)">RF 54.1% · 3× baseline</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="ab-sec">
+    <div class="ab-eyebrow">Visualizations</div>
+    <div class="ab-sec-title">5 pipeline charts</div>
+    <div class="ab-sec-sub">Click any chart to enlarge. All generated by <code>src/pipeline.py</code> on the real dataset.</div>
+    <div class="chart-grid">
+      <div class="chart-tile" onclick="lb('outputs/01_cleaning_eda.png')">
+        <img src="outputs/01_cleaning_eda.png" alt="Data Cleaning EDA" loading="lazy"/>
+        <div class="chart-cap">01 — Data Cleaning &amp; EDA</div>
+      </div>
+      <div class="chart-tile" onclick="lb('outputs/02_feature_engineering.png')">
+        <img src="outputs/02_feature_engineering.png" alt="Feature Engineering" loading="lazy"/>
+        <div class="chart-cap">02 — Feature Engineering</div>
+      </div>
+      <div class="chart-tile" onclick="lb('outputs/03_pca_clustering.png')">
+        <img src="outputs/03_pca_clustering.png" alt="PCA Clustering" loading="lazy"/>
+        <div class="chart-cap">03 — PCA &amp; KMeans Clustering</div>
+      </div>
+      <div class="chart-tile" onclick="lb('outputs/04_ml_evaluation.png')">
+        <img src="outputs/04_ml_evaluation.png" alt="ML Evaluation" loading="lazy"/>
+        <div class="chart-cap">04 — ML Model Evaluation</div>
+      </div>
+      <div class="chart-tile wide" onclick="lb('outputs/05_generative_art.png')">
+        <img src="outputs/05_generative_art.png" alt="Generative Art" loading="lazy"/>
+        <div class="chart-cap">05 — Generative Art (data-driven, per genre)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Art engine -->
+  <div class="ab-sec">
+    <div class="ab-eyebrow">Generative Art Engine</div>
+    <div class="ab-sec-title">Every pixel is a data point</div>
+    <div class="ab-sec-sub">The art is not decorative — each audio feature maps directly to a visual layer rendered on HTML5 Canvas.</div>
+    <div class="layer-grid">
+      <div class="layer"><div class="layer-emoji">⚡</div><div><div class="layer-lbl">Energy</div><div class="layer-desc">Background orb count + particle field density</div></div></div>
+      <div class="layer"><div class="layer-emoji">💛</div><div><div class="layer-lbl">Valence</div><div class="layer-desc">Orb brightness and overall color opacity</div></div></div>
+      <div class="layer"><div class="layer-emoji">💃</div><div><div class="layer-lbl">Danceability</div><div class="layer-desc">Geometric shape count and ring complexity</div></div></div>
+      <div class="layer"><div class="layer-emoji">⏱</div><div><div class="layer-lbl">Tempo</div><div class="layer-desc">Radial ray density from the center point</div></div></div>
+      <div class="layer"><div class="layer-emoji">🎸</div><div><div class="layer-lbl">Acousticness</div><div class="layer-desc">Concentric ring count around center</div></div></div>
+      <div class="layer"><div class="layer-emoji">🗣</div><div><div class="layer-lbl">Speechiness</div><div class="layer-desc">Horizontal waveform line overlays</div></div></div>
+      <div class="layer"><div class="layer-emoji">🔊</div><div><div class="layer-lbl">Loudness</div><div class="layer-desc">Central glow intensity and core dot size</div></div></div>
+    </div>
+  </div>
+
+  <!-- Tech stack -->
+  <div class="ab-sec">
+    <div class="ab-eyebrow">Tech Stack</div>
+    <div class="ab-sec-title">Built with</div>
+    <div class="tech-chips">
+      <span class="chip hi">scikit-learn</span>
+      <span class="chip hi">pandas</span>
+      <span class="chip hi">NumPy</span>
+      <span class="chip hi">Matplotlib</span>
+      <span class="chip hi">Seaborn</span>
+      <span class="chip">Random Forest</span>
+      <span class="chip">Logistic Regression</span>
+      <span class="chip">Gradient Boosting</span>
+      <span class="chip">KMeans</span>
+      <span class="chip">PCA</span>
+      <span class="chip">HTML5 Canvas</span>
+      <span class="chip">Vanilla JS</span>
+      <span class="chip">CSS3</span>
+    </div>
+    <div class="source-box">
+      <span style="color:var(--muted)">Dataset &nbsp;&nbsp;</span>
+      <a href="https://www.kaggle.com/datasets/joebeachcapital/30000-spotify-songs" target="_blank">
+        Kaggle — 30000 Spotify Songs (joebeachcapital)
+      </a><br>
+      <span style="color:var(--muted)">Source code</span>
+      <a href="https://github.com/sharonkodali/vibecanvas" target="_blank">
+        github.com/YOUR_USERNAME/vibecanvas
+      </a>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- Lightbox -->
+<div class="lb" id="lb" onclick="lbClose()">
+  <button class="lb-x" onclick="lbClose()">✕</button>
+  <img id="lb-img" src="" alt=""/>
+</div>
+
+<!-- Offscreen canvas for search art -->
 <canvas id="searchCanvas" width="500" height="500" style="display:none"></canvas>
 
 <script>
@@ -1327,17 +1516,212 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(`page-${name}`).classList.add('active');
-  if (name === 'search') document.querySelectorAll('.nav-tab')[0].classList.add('active');
-  if (name === 'sandbox') {
-    document.querySelectorAll('.nav-tab')[1].classList.add('active');
-    sandboxRedraw();
-  }
+  const tabs = document.querySelectorAll('.nav-tab');
+  if (name === 'search')  tabs[0].classList.add('active');
+  if (name === 'sandbox') { tabs[1].classList.add('active'); sandboxRedraw(); }
+  if (name === 'about')   tabs[2].classList.add('active');
 }
+
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
 
 // ═══════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
+  buildSandbox();
+  loadData();
+});
+
+// ── Alias old genre filter function name used by genre chips ──
+function setGenre(genre, btn) {
+  document.querySelectorAll('.gchip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  activeGenre = genre;
+  runSearch(document.getElementById('searchInput').value);
+}
+
+// ── Alias old renderSearchArt to write into new artPanel ──
+const _origRenderSearchArt = renderSearchArt;
+function renderSearchArt(track) {
+  const canvas = document.getElementById('searchCanvas');
+  const features = {
+    energy: track.energy, valence: track.valence,
+    danceability: track.danceability, tempo: track.tempo,
+    acousticness: track.acousticness, instrumentalness: track.instrumentalness,
+    speechiness: track.speechiness, liveness: track.liveness,
+    loudness: track.loudness, loudness_norm: track.loudness_norm,
+    tempo_norm: track.tempo_norm,
+  };
+  drawArt(canvas, features, track.genre, null, Date.now() % 100000);
+  const vibe = detectVibe(features);
+  const gc = GENRE_COLORS[track.genre] || '#888';
+  const imgDataUrl = canvas.toDataURL('image/png');
+
+  const featDefs = [
+    {key:'energy',lbl:'Energy'},{key:'valence',lbl:'Valence'},
+    {key:'danceability',lbl:'Dance'},{key:'acousticness',lbl:'Acoustic'},
+    {key:'instrumentalness',lbl:'Instru.'},{key:'speechiness',lbl:'Speech'},
+  ];
+  const bars = featDefs.map(f => {
+    const pct = Math.round(clamp01(features[f.key]||0)*100);
+    const col = pct>70?'var(--pink)':pct>45?'var(--teal)':'var(--blue)';
+    return `<div class="feat-row">
+      <div class="feat-top">
+        <span class="feat-lbl">${f.lbl}</span>
+        <span class="feat-val">${pct}%</span>
+      </div>
+      <div class="feat-track">
+        <div class="feat-fill" style="width:${pct}%;background:${col}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('artPanel').innerHTML = `
+  <div class="art-card">
+    <div class="art-img-wrap">
+      <img src="${imgDataUrl}" alt="Art for ${escHtml(track.name)}"/>
+      <div class="art-overlay">
+        <div class="art-vibe-pill">
+          <div class="art-vibe-name">${vibe}</div>
+          <div class="art-vibe-genre" style="color:${gc}">${track.genre.toUpperCase()} · ${(track.subgenre||'').toLowerCase()}</div>
+        </div>
+        <button class="art-sandbox-btn" onclick="sendToSandbox(${JSON.stringify(features).replace(/"/g,'&quot;')})">
+          Open in Sandbox →
+        </button>
+      </div>
+    </div>
+    <div class="art-meta">
+      <div class="art-track-name">${escHtml(track.name)}</div>
+      <div class="art-track-artist">${escHtml(track.artist)}</div>
+      <div class="art-track-stats">
+        Popularity: ${track.popularity}/100 &nbsp;·&nbsp;
+        ${Math.round(features.tempo||120)} BPM &nbsp;·&nbsp;
+        Loudness: ${(features.loudness||0).toFixed(1)} dB
+      </div>
+    </div>
+    <div class="feat-grid">${bars}</div>
+  </div>`;
+}
+
+// ── Override selectTrack to use new panel + list ──
+function selectTrack(id, el) {
+  activeTrackId = id;
+  document.querySelectorAll('.t-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  const track = TRACKS.find(t => t.id === id);
+  if (track) renderSearchArt(track);
+}
+
+// ── Override renderTrackList to use new markup ──
+function renderTrackList() {
+  const list = document.getElementById('trackList');
+  if (!filteredTracks.length) {
+    list.innerHTML = `<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted)">No tracks found</div>`;
+    return;
+  }
+  list.innerHTML = filteredTracks.map((t, i) => {
+    const dot = GENRE_COLORS[t.genre] || '#888';
+    const isActive = t.id === activeTrackId;
+    return `<div class="t-item${isActive?' active':''}" onclick="selectTrack('${t.id}', this)">
+      <div class="t-idx">${i+1}</div>
+      <div class="t-icon" style="background:${dot}18">${genreEmoji(t.genre)}</div>
+      <div class="t-info">
+        <div class="t-name">${escHtml(t.name)}</div>
+        <div class="t-artist">${escHtml(t.artist)}</div>
+      </div>
+      <div class="t-dot" style="background:${dot}"></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Override buildSandbox to use new class names ──
+const _origBuildSandbox = buildSandbox;
+function buildSandbox() {
+  _origBuildSandbox();
+}
+
+// ── Override buildPresets ──
+function buildPresets() {
+  const grid = document.getElementById('presetGrid');
+  grid.innerHTML = PRESETS.map((p,i) => {
+    const col = presetColor(p.vals);
+    return `<button class="preset-btn" id="preset-${i}" onclick="applyPreset(${i})">
+      <div><span class="preset-dot" style="background:${col}"></span><span class="preset-name">${p.emoji} ${p.name}</span></div>
+      <div class="preset-tag">${p.tags}</div>
+    </button>`;
+  }).join('');
+}
+
+// ── Override buildSliders ──
+function buildSliders(containerId, configs) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = configs.map(s => `
+    <div class="sl-row">
+      <div class="sl-top">
+        <div>
+          <div class="sl-name">${s.label}</div>
+          <div class="sl-hint">${s.desc}</div>
+        </div>
+        <div class="sl-val" id="val-${s.key}">${formatVal(s.key, s.def)}</div>
+      </div>
+      <input type="range" id="sb-${s.key}"
+        min="${s.min}" max="${s.max}" step="${s.step}" value="${s.def}"
+        oninput="onSliderChange('${s.key}', this.value)"/>
+    </div>`).join('');
+}
+
+// ── Override buildSchemes ──
+function buildSchemes() {
+  const row = document.getElementById('schemeRow');
+  row.innerHTML = Object.entries(COLOR_SCHEMES).map(([name, cols]) => {
+    const grad = `linear-gradient(135deg,${cols[0]},${cols[1]},${cols[2]})`;
+    return `<div class="pal-swatch" title="${name}" style="background:${grad}" onclick="setScheme('${name}',this)"></div>`;
+  }).join('') + `<div class="pal-swatch pal-auto" title="Auto (genre)" onclick="setScheme(null,this)">auto</div>`;
+}
+
+// ── Override preset active state ──
+function applyPreset(i) {
+  document.querySelectorAll('.preset-btn').forEach(c => c.classList.remove('on'));
+  document.getElementById(`preset-${i}`)?.classList.add('on');
+  setSliderVals(PRESETS[i].vals);
+  sandboxRedraw();
+}
+
+// ── Override setScheme ──
+function setScheme(name, el) {
+  document.querySelectorAll('.pal-swatch').forEach(s => s.classList.remove('on'));
+  el.classList.add('on');
+  currentScheme = name ? COLOR_SCHEMES[name] : null;
+  sandboxRedraw();
+}
+
+// ── Lightbox ──
+function lb(src) {
+  document.getElementById('lb-img').src = src;
+  document.getElementById('lb').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function lbClose() {
+  document.getElementById('lb').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') lbClose(); });
+
+// ── Wire search input ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(window._st);
+    window._st = setTimeout(() => runSearch(this.value), 120);
+  });
   buildSandbox();
   loadData();
 });
