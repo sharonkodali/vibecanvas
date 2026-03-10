@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VibeCanvas — Spotify Art Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset ──────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #08080f;
+  --bg2:      #0e0e1a;
+  --bg3:      #141425;
+  --bg4:      #1a1a30;
+  --border:   #1f1f38;
+  --border2:  #2a2a48;
+  --text:     #e8e8f5;
+  --muted:    #6060a0;
+  --muted2:   #9090c0;
+  --gold:     #f0c040;
+  --teal:     #00e5c0;
+  --pink:     #ff3a6e;
+  --blue:     #4080ff;
+  --r:        10px;
+  --font:     'Space Grotesk', sans-serif;
+  --mono:     'DM Mono', monospace;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Scanline texture ───────────────────────────────── */
+body::after{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);
+  pointer-events:none;z-index:9999;
+}
+
+/* ── Nav ────────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(8,8,15,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 32px;height:60px;gap:0;
+}
+.nav-logo{
+  font-size:17px;font-weight:700;
+  letter-spacing:-0.5px;
+  color:var(--text);
+  margin-right:40px;
+  display:flex;align-items:center;gap:10px;
+}
+.nav-logo-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:linear-gradient(135deg,var(--teal),var(--blue));
+  box-shadow:0 0 12px var(--teal);
+}
+.nav-tabs{display:flex;gap:4px;flex:1}
+.nav-tab{
+  padding:7px 18px;border-radius:6px;
+  font-size:13px;font-weight:500;
+  cursor:pointer;border:none;
+  background:transparent;color:var(--muted2);
+  transition:all .2s ease;letter-spacing:0.2px;
+}
+.nav-tab:hover{color:var(--text);background:var(--bg3)}
+.nav-tab.active{color:var(--bg);background:var(--text)}
+.nav-badge{
+  font-family:var(--mono);font-size:10px;
+  color:var(--muted);border:1px solid var(--border2);
+  padding:3px 10px;border-radius:20px;
+  letter-spacing:0.5px;margin-left:auto;
+}
+
+/* ── Pages ──────────────────────────────────────────── */
+.page{display:none;min-height:calc(100vh - 60px)}
+.page.active{display:block}
+
+/* ── SEARCH PAGE ──────────────────────────────────────*/
+.search-page{
+  display:grid;
+  grid-template-columns:420px 1fr;
+  min-height:calc(100vh - 60px);
+}
+@media(max-width:900px){.search-page{grid-template-columns:1fr}}
+
+/* Left panel */
+.search-panel{
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  height:calc(100vh - 60px);
+  position:sticky;top:60px;overflow:hidden;
+}
+.search-header{
+  padding:24px 24px 16px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.search-title{
+  font-size:13px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);font-family:var(--mono);
+  margin-bottom:14px;
+}
+.search-wrap{position:relative}
+.search-input{
+  width:100%;
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:8px;
+  padding:11px 40px 11px 16px;
+  color:var(--text);
+  font-family:var(--font);font-size:14px;
+  outline:none;
+  transition:border-color .2s;
+}
+.search-input:focus{border-color:var(--teal)}
+.search-input::placeholder{color:var(--muted)}
+.search-icon{
+  position:absolute;right:12px;top:50%;
+  transform:translateY(-50%);
+  color:var(--muted);font-size:14px;pointer-events:none;
+}
+.search-meta{
+  padding:10px 24px 0;
+  font-size:11px;font-family:var(--mono);
+  color:var(--muted);flex-shrink:0;
+}
+.filter-bar{
+  display:flex;gap:6px;padding:12px 24px;
+  flex-shrink:0;overflow-x:auto;
+  border-bottom:1px solid var(--border);
+}
+.filter-bar::-webkit-scrollbar{height:0}
+.filter-chip{
+  padding:4px 12px;border-radius:20px;
+  font-size:11px;font-weight:600;
+  letter-spacing:0.5px;text-transform:uppercase;
+  border:1px solid var(--border2);
+  background:transparent;color:var(--muted2);
+  cursor:pointer;transition:all .18s;white-space:nowrap;
+}
+.filter-chip:hover{border-color:var(--border2);color:var(--text)}
+.filter-chip.active{color:var(--bg);border-color:transparent}
+
+/* Genre chip colors */
+.filter-chip[data-genre="all"].active{background:#ffffff;color:#000}
+.filter-chip[data-genre="pop"].active{background:#f0c040}
+.filter-chip[data-genre="rap"].active{background:#ff3a6e}
+.filter-chip[data-genre="rock"].active{background:#ff6b35}
+.filter-chip[data-genre="edm"].active{background:#00e5c0}
+.filter-chip[data-genre="r&b"].active{background:#a040ff}
+.filter-chip[data-genre="latin"].active{background:#00cc66}
+
+/* Track list */
+.track-list{flex:1;overflow-y:auto;padding:8px 0}
+.track-list::-webkit-scrollbar{width:4px}
+.track-list::-webkit-scrollbar-track{background:transparent}
+.track-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.track-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 24px;cursor:pointer;
+  transition:background .15s;border-left:2px solid transparent;
+}
+.track-item:hover{background:var(--bg3)}
+.track-item.active{
+  background:var(--bg4);
+  border-left-color:var(--teal);
+}
+.track-num{
+  font-family:var(--mono);font-size:10px;
+  color:var(--muted);width:22px;text-align:right;
+  flex-shrink:0;
+}
+.track-art{
+  width:38px;height:38px;border-radius:6px;
+  flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:15px;
+  position:relative;overflow:hidden;
+}
+.track-info{flex:1;min-width:0}
+.track-name{
+  font-size:13px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--text);
+}
+.track-artist{
+  font-size:11px;color:var(--muted2);
+  font-family:var(--mono);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:1px;
+}
+.track-genre-dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;
+}
+.track-pop{
+  font-family:var(--mono);font-size:10px;
+  color:var(--muted);flex-shrink:0;width:24px;text-align:right;
+}
+
+/* Right panel — art display */
+.art-display{
+  display:flex;flex-direction:column;
+  background:var(--bg);
+  min-height:calc(100vh - 60px);
+}
+.art-display-inner{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:40px;
+}
+.art-empty{
+  text-align:center;
+  opacity:0.4;
+}
+.art-empty-icon{font-size:56px;margin-bottom:16px}
+.art-empty-text{
+  font-size:14px;color:var(--muted2);
+  font-family:var(--mono);line-height:1.7;
+}
+
+/* Canvas + info */
+.art-container{
+  width:100%;max-width:560px;
+  display:flex;flex-direction:column;gap:20px;
+}
+.art-canvas-wrap{
+  position:relative;
+  border-radius:14px;overflow:hidden;
+  background:var(--bg2);
+  box-shadow:0 0 80px rgba(0,229,192,0.06),0 0 0 1px var(--border);
+}
+#searchCanvas{
+  display:block;width:100%;height:auto;
+}
+.art-vibe-badge{
+  position:absolute;bottom:14px;left:14px;
+  background:rgba(8,8,15,0.85);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--border2);
+  border-radius:8px;padding:8px 14px;
+}
+.art-vibe-name{font-size:13px;font-weight:600;color:var(--text)}
+.art-vibe-genre{
+  font-size:10px;font-family:var(--mono);
+  color:var(--teal);margin-top:2px;
+}
+
+.art-track-info{
+  display:grid;grid-template-columns:1fr auto;
+  align-items:start;gap:16px;
+}
+.art-track-name{
+  font-size:22px;font-weight:700;
+  letter-spacing:-0.5px;line-height:1.2;
+}
+.art-track-artist{
+  font-size:14px;color:var(--muted2);
+  font-family:var(--mono);margin-top:4px;
+}
+.art-open-sandbox{
+  padding:9px 16px;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:8px;cursor:pointer;
+  font-family:var(--font);font-size:12px;font-weight:600;
+  color:var(--muted2);
+  transition:all .2s;white-space:nowrap;
+}
+.art-open-sandbox:hover{
+  border-color:var(--teal);color:var(--teal);
+}
+
+/* Feature bars */
+.feat-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;
+}
+.feat-row{display:flex;flex-direction:column;gap:4px}
+.feat-top{
+  display:flex;justify-content:space-between;align-items:baseline;
+}
+.feat-label{
+  font-size:10px;font-family:var(--mono);
+  color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;
+}
+.feat-val{
+  font-size:11px;font-family:var(--mono);
+  color:var(--teal);font-weight:500;
+}
+.feat-bar-bg{
+  height:3px;background:var(--border);
+  border-radius:2px;overflow:hidden;
+}
+.feat-bar-fill{
+  height:100%;border-radius:2px;
+  transition:width .6s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── SANDBOX PAGE ─────────────────────────────────── */
+.sandbox-page{
+  display:grid;
+  grid-template-columns:1fr 500px;
+  min-height:calc(100vh - 60px);
+}
+@media(max-width:1100px){.sandbox-page{grid-template-columns:1fr}}
+
+.sandbox-canvas-side{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:40px;background:var(--bg);
+  position:sticky;top:60px;
+  height:calc(100vh - 60px);
+  overflow:hidden;
+}
+#sandboxCanvas{
+  border-radius:14px;
+  box-shadow:0 0 100px rgba(0,229,192,0.08),0 0 0 1px var(--border);
+  max-width:100%;max-height:calc(100vh - 180px);
+}
+.sandbox-vibe-tag{
+  margin-top:16px;
+  font-family:var(--mono);font-size:12px;
+  color:var(--muted2);letter-spacing:1px;
+}
+.sandbox-vibe-tag span{color:var(--teal);font-weight:500}
+
+/* Sandbox controls panel */
+.sandbox-controls{
+  background:var(--bg2);
+  border-left:1px solid var(--border);
+  overflow-y:auto;
+  padding:32px 28px;
+}
+.sandbox-controls::-webkit-scrollbar{width:4px}
+.sandbox-controls::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.sandbox-header{margin-bottom:28px}
+.sandbox-title{
+  font-size:22px;font-weight:700;letter-spacing:-0.5px;
+  margin-bottom:6px;
+}
+.sandbox-subtitle{
+  font-size:12px;font-family:var(--mono);
+  color:var(--muted);line-height:1.6;
+}
+
+/* Section dividers */
+.ctrl-section{margin-bottom:28px}
+.ctrl-section-label{
+  font-size:10px;font-family:var(--mono);
+  color:var(--muted);text-transform:uppercase;letter-spacing:2px;
+  margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.ctrl-section-label::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+
+/* Sliders */
+.slider-row{margin-bottom:16px}
+.slider-top{
+  display:flex;justify-content:space-between;
+  align-items:baseline;margin-bottom:7px;
+}
+.slider-name{
+  font-size:12px;font-weight:500;color:var(--text);
+}
+.slider-desc{
+  font-size:10px;font-family:var(--mono);color:var(--muted);
+  margin-top:1px;
+}
+.slider-number{
+  font-size:13px;font-family:var(--mono);
+  color:var(--teal);font-weight:500;
+  min-width:42px;text-align:right;
+}
+input[type=range]{
+  width:100%;height:4px;
+  appearance:none;background:var(--border2);
+  border-radius:2px;outline:none;cursor:pointer;
+  transition:opacity .2s;
+}
+input[type=range]:hover{opacity:0.9}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--teal);
+  border:2px solid var(--bg);
+  box-shadow:0 0 0 2px rgba(0,229,192,0.25);
+  transition:all .2s;
+}
+input[type=range]::-webkit-slider-thumb:hover{
+  transform:scale(1.2);
+  box-shadow:0 0 0 4px rgba(0,229,192,0.15);
+}
+
+/* Preset cards */
+.preset-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  margin-bottom:20px;
+}
+.preset-card{
+  padding:10px 12px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;cursor:pointer;
+  transition:all .18s;text-align:left;
+}
+.preset-card:hover{
+  border-color:var(--border2);
+  background:var(--bg4);
+  transform:translateY(-1px);
+}
+.preset-card.active{
+  border-color:var(--teal);
+  background:rgba(0,229,192,0.04);
+}
+.preset-dot{
+  width:8px;height:8px;border-radius:50%;
+  display:inline-block;margin-right:6px;
+  vertical-align:middle;
+}
+.preset-name{
+  font-size:12px;font-weight:600;color:var(--text);
+}
+.preset-tags{
+  font-size:9px;font-family:var(--mono);
+  color:var(--muted);margin-top:3px;letter-spacing:0.3px;
+}
+
+/* Action buttons */
+.btn-row{display:flex;gap:8px;margin-top:8px}
+.btn-primary{
+  flex:1;padding:12px;
+  background:var(--teal);border:none;
+  border-radius:8px;color:#000;
+  font-family:var(--font);font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  letter-spacing:0.3px;
+}
+.btn-primary:hover{
+  background:#00ffda;
+  box-shadow:0 4px 20px rgba(0,229,192,0.3);
+  transform:translateY(-1px);
+}
+.btn-secondary2{
+  padding:12px 16px;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:8px;color:var(--muted2);
+  font-family:var(--font);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;
+}
+.btn-secondary2:hover{border-color:var(--border2);color:var(--text)}
+
+/* Color scheme picker */
+.scheme-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.scheme-swatch{
+  width:32px;height:32px;border-radius:6px;
+  cursor:pointer;border:2px solid transparent;
+  transition:all .18s;
+}
+.scheme-swatch.active{
+  border-color:white;
+  box-shadow:0 0 0 1px white;
+}
+.scheme-swatch:hover{transform:scale(1.1)}
+
+/* Randomize pulse animation */
+@keyframes pulse-teal{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,229,192,0.4)}
+  50%{box-shadow:0 0 0 8px rgba(0,229,192,0)}
+}
+.animate-pulse{animation:pulse-teal 2s infinite}
+
+/* Render indicator */
+.render-dot{
+  display:inline-block;width:6px;height:6px;
+  border-radius:50%;background:var(--teal);
+  margin-right:6px;
+  animation:blink 1s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+
+/* Loading shimmer */
+.shimmer{
+  background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Tooltip */
+.tip{
+  position:relative;display:inline-block;
+}
+.tip::after{
+  content:attr(data-tip);
+  position:absolute;left:50%;bottom:calc(100%+6px);
+  transform:translateX(-50%);
+  background:var(--bg4);border:1px solid var(--border2);
+  color:var(--text);font-size:10px;font-family:var(--mono);
+  padding:4px 8px;border-radius:4px;white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .15s;
+  z-index:50;
+}
+.tip:hover::after{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────── -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    VibeCanvas
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('search')">🔍 Song Search</button>
+    <button class="nav-tab" onclick="showPage('sandbox')">🎛 Audio Sandbox</button>
+  </div>
+  <div class="nav-badge" id="db-badge">loading...</div>
+</nav>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 1 — SONG SEARCH
+════════════════════════════════════════════════════ -->
+<div class="page active" id="page-search">
+<div class="search-page">
+
+  <!-- Left: search panel -->
+  <div class="search-panel">
+    <div class="search-header">
+      <div class="search-title">Search Tracks</div>
+      <div class="search-wrap">
+        <input class="search-input" id="searchInput" type="text"
+               placeholder="Song name or artist..."
+               autocomplete="off" spellcheck="false"/>
+        <span class="search-icon">⌕</span>
+      </div>
+    </div>
+    <div class="search-meta" id="search-meta">28,351 tracks loaded</div>
+    <div class="filter-bar">
+      <button class="filter-chip active" data-genre="all" onclick="setGenreFilter('all',this)">All</button>
+      <button class="filter-chip" data-genre="pop"   onclick="setGenreFilter('pop',this)"  >Pop</button>
+      <button class="filter-chip" data-genre="rap"   onclick="setGenreFilter('rap',this)"  >Rap</button>
+      <button class="filter-chip" data-genre="rock"  onclick="setGenreFilter('rock',this)" >Rock</button>
+      <button class="filter-chip" data-genre="edm"   onclick="setGenreFilter('edm',this)"  >EDM</button>
+      <button class="filter-chip" data-genre="r&b"   onclick="setGenreFilter('r&b',this)"  >R&amp;B</button>
+      <button class="filter-chip" data-genre="latin" onclick="setGenreFilter('latin',this)">Latin</button>
+    </div>
+    <div class="track-list" id="trackList">
+      <div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px">
+        Loading dataset...
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: art display -->
+  <div class="art-display">
+    <div class="art-display-inner" id="artDisplayInner">
+      <div class="art-empty">
+        <div class="art-empty-icon">🎨</div>
+        <div class="art-empty-text">
+          Search or click a track<br>to generate its visual fingerprint
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     PAGE 2 — SANDBOX
+════════════════════════════════════════════════════ -->
+<div class="page" id="page-sandbox">
+<div class="sandbox-page">
+
+  <!-- Left: live canvas -->
+  <div class="sandbox-canvas-side">
+    <canvas id="sandboxCanvas" width="500" height="500"></canvas>
+    <div class="sandbox-vibe-tag">
+      <span class="render-dot"></span>
+      Detected vibe: <span id="sandbox-vibe-label">—</span>
+    </div>
+  </div>
+
+  <!-- Right: controls -->
+  <div class="sandbox-controls">
+    <div class="sandbox-header">
+      <div class="sandbox-title">Audio Sandbox</div>
+      <div class="sandbox-subtitle">
+        Adjust any audio feature and watch the<br>
+        generative art update in real time.
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Mood Presets</div>
+      <div class="preset-grid" id="presetGrid">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Core features -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Core Features</div>
+      <div id="sliders-core"></div>
+    </div>
+
+    <!-- Texture features -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Texture &amp; Timbre</div>
+      <div id="sliders-texture"></div>
+    </div>
+
+    <!-- Rhythm features -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Rhythm &amp; Structure</div>
+      <div id="sliders-rhythm"></div>
+    </div>
+
+    <!-- Color scheme -->
+    <div class="ctrl-section">
+      <div class="ctrl-section-label">Color Palette Override</div>
+      <div class="scheme-row" id="schemeRow">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="btn-row">
+      <button class="btn-primary animate-pulse" onclick="randomizeAll()">⚡ Randomize</button>
+      <button class="btn-secondary2" onclick="sendToSandbox(null)">↺ Reset</button>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     OFFSCREEN CANVAS for search page art
+════════════════════════════════════════════════════ -->
+<canvas id="searchCanvas" width="500" height="500" style="display:none"></canvas>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════
+let TRACKS = [];
+let filteredTracks = [];
+let activeGenre = 'all';
+let activeTrackId = null;
+let sandboxRafId = null;
+let currentScheme = null;
+
+const GENRE_COLORS = {
+  pop:   '#f0c040',
+  rap:   '#ff3a6e',
+  rock:  '#ff6b35',
+  edm:   '#00e5c0',
+  'r&b': '#a040ff',
+  latin: '#00cc66',
+};
+
+const GENRE_PALETTES = {
+  pop:   [['#f0c040','#fb923c','#ff3a6e','#1a0800'],['#ffd700','#ff8c00','#dc143c','#0a0200']],
+  rap:   [['#ff3a6e','#cc0033','#880022','#0a0005'],['#ff1744','#b71c1c','#4a0010','#080000']],
+  rock:  [['#ff6b35','#e74c3c','#c0392b','#f1c40f'],['#ff4500','#dc143c','#8b0000','#ffd700']],
+  edm:   [['#00e5c0','#0ea5e9','#6030ff','#001030'],['#00ffff','#00bfff','#4040ff','#000820']],
+  'r&b': [['#a040ff','#7b2fff','#4a1a80','#c8a0ff'],['#9900ff','#6600cc','#330066','#cc88ff']],
+  latin: [['#00cc66','#33dd88','#ff9900','#005522'],['#00aa44','#ffcc00','#ff6600','#003311']],
+};
+
+const COLOR_SCHEMES = {
+  'Aurora':   ['#00e5c0','#0060ff','#8800ff','#ff0088','#001040'],
+  'Inferno':  ['#ff3a00','#ff8800','#ffcc00','#ff0055','#0a0200'],
+  'Oceanic':  ['#0040c0','#0080ff','#00c8ff','#00ffee','#000820'],
+  'Neon':     ['#ff00aa','#aa00ff','#0088ff','#00ffaa','#080010'],
+  'Mono':     ['#ffffff','#c0c0c0','#808080','#404040','#080808'],
+  'Forest':   ['#003300','#006600','#00cc44','#88ff44','#ccff88'],
+};
+
+const SLIDER_CONFIG = {
+  core: [
+    {key:'energy',       label:'Energy',       desc:'Musical intensity & power',          min:0,  max:1,    step:0.01, def:0.7},
+    {key:'valence',      label:'Valence',       desc:'Positivity & happiness',             min:0,  max:1,    step:0.01, def:0.5},
+    {key:'danceability', label:'Danceability',  desc:'How suitable for dancing',           min:0,  max:1,    step:0.01, def:0.6},
+  ],
+  texture: [
+    {key:'acousticness',     label:'Acousticness',     desc:'Acoustic vs electronic',     min:0, max:1,  step:0.01, def:0.2},
+    {key:'instrumentalness', label:'Instrumentalness', desc:'Vocal vs instrumental',       min:0, max:1,  step:0.01, def:0.1},
+    {key:'speechiness',      label:'Speechiness',      desc:'Spoken words presence',       min:0, max:1,  step:0.01, def:0.07},
+    {key:'liveness',         label:'Liveness',         desc:'Live performance feel',       min:0, max:1,  step:0.01, def:0.15},
+  ],
+  rhythm: [
+    {key:'tempo',   label:'Tempo (BPM)', desc:'Speed of the track',      min:60,  max:200, step:1,   def:120},
+    {key:'loudness',label:'Loudness',    desc:'Overall volume level (dB)',min:-30, max:0,   step:0.5, def:-7},
+  ],
+};
+
+const PRESETS = [
+  {name:'Dark & Brooding',   emoji:'🌑', tags:'gothic · heavy',  vals:{energy:0.35,valence:0.15,danceability:0.35,acousticness:0.3,instrumentalness:0.25,speechiness:0.08,liveness:0.12,tempo:88,loudness:-10}},
+  {name:'Hype Beast',        emoji:'⚡', tags:'loud · explosive', vals:{energy:0.9,valence:0.65,danceability:0.82,acousticness:0.04,instrumentalness:0.05,speechiness:0.12,liveness:0.2,tempo:135,loudness:-4}},
+  {name:'Chill Vibes',       emoji:'🌿', tags:'calm · mellow',   vals:{energy:0.35,valence:0.5,danceability:0.5,acousticness:0.6,instrumentalness:0.15,speechiness:0.06,liveness:0.1,tempo:92,loudness:-12}},
+  {name:'Happy & Bright',    emoji:'☀️', tags:'joyful · warm',   vals:{energy:0.72,valence:0.88,danceability:0.74,acousticness:0.18,instrumentalness:0.05,speechiness:0.09,liveness:0.15,tempo:120,loudness:-6}},
+  {name:'Late Night',        emoji:'🌙', tags:'smoky · jazz',    vals:{energy:0.28,valence:0.42,danceability:0.55,acousticness:0.72,instrumentalness:0.5,speechiness:0.05,liveness:0.08,tempo:88,loudness:-14}},
+  {name:'Beast Mode',        emoji:'🔥', tags:'power · drive',   vals:{energy:0.95,valence:0.5,danceability:0.78,acousticness:0.02,instrumentalness:0.08,speechiness:0.1,liveness:0.25,tempo:142,loudness:-3}},
+];
+
+// ═══════════════════════════════════════════════════
+//  LOAD DATA  (reads tracks_mini.json from same folder)
+// ═══════════════════════════════════════════════════
+async function loadData() {
+  try {
+    const res = await fetch('tracks_mini.json');
+    const raw = await res.json();
+    TRACKS = raw.map(r => ({
+      id: r.id, name: r.n, artist: r.a,
+      genre: r.g, subgenre: r.sg, popularity: r.pop,
+      danceability: r.d, energy: r.e, valence: r.v,
+      tempo: r.t, acousticness: r.ac, instrumentalness: r.ins,
+      speechiness: r.sp, liveness: r.li, loudness: r.lo,
+      loudness_norm: r.ln, tempo_norm: r.tn,
+      intensity_score: r.is, chill_score: r.cs,
+    }));
+    document.getElementById('db-badge').textContent = `${TRACKS.length.toLocaleString()} tracks`;
+    document.getElementById('search-meta').textContent = `${TRACKS.length.toLocaleString()} tracks · type to search`;
+    filteredTracks = TRACKS.slice(0, 80);
+    renderTrackList();
+  } catch(e) {
+    // Demo mode with sample data if file not found
+    document.getElementById('db-badge').textContent = 'demo mode';
+    document.getElementById('search-meta').textContent = 'Place tracks_mini.json in same folder to load full dataset';
+    TRACKS = generateDemoTracks();
+    filteredTracks = TRACKS.slice(0,40);
+    renderTrackList();
+  }
+}
+
+function generateDemoTracks() {
+  const genres = ['pop','rap','rock','edm','r&b','latin'];
+  const names = ['Blinding Lights','Levitating','Peaches','Good 4 U','Stay','Montero','Industry Baby','Heat Waves','Bad Habits','Shivers','Easy On Me','Ghost','Fancy Like','Butter','Permission to Dance','The Business','Take My Breath','Higher Power','Solar Power','Mood'];
+  const artists = ['The Weeknd','Dua Lipa','Justin Bieber','Olivia Rodrigo','Kid Laroi','Lil Nas X','Drake','Glass Animals','Ed Sheeran','Taylor Swift'];
+  return Array.from({length:100},(_,i)=>({
+    id:`demo_${i}`, name:names[i%names.length], artist:artists[i%artists.length],
+    genre:genres[i%genres.length], subgenre:'demo', popularity:Math.floor(Math.random()*40)+60,
+    danceability:Math.random(), energy:Math.random(), valence:Math.random(),
+    tempo:80+Math.random()*100, acousticness:Math.random(), instrumentalness:Math.random()*0.5,
+    speechiness:Math.random()*0.3, liveness:Math.random()*0.5, loudness:-5-Math.random()*15,
+    loudness_norm:0.3+Math.random()*0.6, tempo_norm:0.2+Math.random()*0.6,
+  }));
+}
+
+// ═══════════════════════════════════════════════════
+//  SEARCH & FILTER
+// ═══════════════════════════════════════════════════
+let searchTimer = null;
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => runSearch(this.value), 120);
+});
+
+function runSearch(query) {
+  const q = query.toLowerCase().trim();
+  let pool = activeGenre === 'all' ? TRACKS : TRACKS.filter(t => t.genre === activeGenre);
+  if (!q) {
+    filteredTracks = pool.slice(0, 80);
+  } else {
+    filteredTracks = pool.filter(t =>
+      t.name.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q)
+    ).slice(0, 120);
+  }
+  document.getElementById('search-meta').textContent =
+    q ? `${filteredTracks.length} results for "${query}"` : `${pool.length.toLocaleString()} tracks`;
+  renderTrackList();
+}
+
+function setGenreFilter(genre, btn) {
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeGenre = genre;
+  runSearch(document.getElementById('searchInput').value);
+}
+
+function renderTrackList() {
+  const list = document.getElementById('trackList');
+  if (!filteredTracks.length) {
+    list.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px">No tracks found</div>`;
+    return;
+  }
+  list.innerHTML = filteredTracks.map((t, i) => {
+    const dot = GENRE_COLORS[t.genre] || '#888';
+    const isActive = t.id === activeTrackId;
+    return `
+    <div class="track-item${isActive?' active':''}" onclick="selectTrack('${t.id}', this)">
+      <div class="track-num">${i+1}</div>
+      <div class="track-art" style="background:${dot}20">${genreEmoji(t.genre)}</div>
+      <div class="track-info">
+        <div class="track-name">${escHtml(t.name)}</div>
+        <div class="track-artist">${escHtml(t.artist)}</div>
+      </div>
+      <div class="track-genre-dot" style="background:${dot}"></div>
+      <div class="track-pop">${t.popularity}</div>
+    </div>`;
+  }).join('');
+}
+
+function genreEmoji(g) {
+  return {pop:'🎵',rap:'🎤',rock:'🎸',edm:'🎹','r&b':'🎷',latin:'💃'}[g]||'🎵';
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════
+//  TRACK SELECTION → ART
+// ═══════════════════════════════════════════════════
+function selectTrack(id, el) {
+  activeTrackId = id;
+  document.querySelectorAll('.track-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  const track = TRACKS.find(t=>t.id===id);
+  if (!track) return;
+  renderSearchArt(track);
+}
+
+function renderSearchArt(track) {
+  const canvas = document.getElementById('searchCanvas');
+  const features = {
+    energy: track.energy, valence: track.valence,
+    danceability: track.danceability, tempo: track.tempo,
+    acousticness: track.acousticness,
+    instrumentalness: track.instrumentalness,
+    speechiness: track.speechiness, liveness: track.liveness,
+    loudness: track.loudness,
+    loudness_norm: track.loudness_norm,
+    tempo_norm: track.tempo_norm,
+  };
+  drawArt(canvas, features, track.genre, null, Date.now() % 100000);
+
+  // Show art in display panel
+  const panel = document.getElementById('artDisplayInner');
+  const vibe = detectVibe(features);
+  const genreColor = GENRE_COLORS[track.genre] || '#888';
+
+  // Build feature bars
+  const featDefs = [
+    {key:'energy',label:'Energy',min:0,max:1},
+    {key:'valence',label:'Valence',min:0,max:1},
+    {key:'danceability',label:'Dance',min:0,max:1},
+    {key:'acousticness',label:'Acoustic',min:0,max:1},
+    {key:'instrumentalness',label:'Instrumental',min:0,max:1},
+    {key:'speechiness',label:'Speech',min:0,max:1},
+  ];
+  const featBars = featDefs.map(f => {
+    const pct = Math.round(((features[f.key]||0) - f.min) / (f.max - f.min) * 100);
+    const barColor = pctToColor(pct);
+    return `
+    <div class="feat-row">
+      <div class="feat-top">
+        <span class="feat-label">${f.label}</span>
+        <span class="feat-val">${pct}%</span>
+      </div>
+      <div class="feat-bar-bg">
+        <div class="feat-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const imgDataUrl = canvas.toDataURL('image/png');
+
+  panel.innerHTML = `
+  <div class="art-container">
+    <div class="art-canvas-wrap">
+      <img src="${imgDataUrl}" style="width:100%;border-radius:14px;display:block" />
+      <div class="art-vibe-badge">
+        <div class="art-vibe-name">${vibe}</div>
+        <div class="art-vibe-genre" style="color:${genreColor}">${track.genre.toUpperCase()} · ${(track.subgenre||'').toLowerCase()}</div>
+      </div>
+    </div>
+    <div class="art-track-info">
+      <div>
+        <div class="art-track-name">${escHtml(track.name)}</div>
+        <div class="art-track-artist">${escHtml(track.artist)}</div>
+        <div style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--muted)">
+          Popularity: ${track.popularity}/100 &nbsp;·&nbsp; ${Math.round(features.tempo)} BPM &nbsp;·&nbsp; ${loudnessLabel(features.loudness)}
+        </div>
+      </div>
+      <button class="art-open-sandbox" onclick="sendToSandbox(${JSON.stringify(features).replace(/"/g,'&quot;')})">
+        Open in Sandbox →
+      </button>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">Audio Features</div>
+      <div class="feat-grid">${featBars}</div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:10px;font-family:var(--mono);color:var(--muted)">
+        Tempo: <span style="color:var(--teal)">${Math.round(features.tempo)} BPM</span>
+        &nbsp;·&nbsp; Loudness: <span style="color:var(--teal)">${features.loudness?.toFixed(1)} dB</span>
+        &nbsp;·&nbsp; Liveness: <span style="color:var(--teal)">${Math.round((features.liveness||0)*100)}%</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pctToColor(pct) {
+  if (pct > 75) return 'var(--pink)';
+  if (pct > 50) return 'var(--teal)';
+  if (pct > 25) return 'var(--blue)';
+  return 'var(--muted)';
+}
+function loudnessLabel(db) {
+  if (db > -5) return 'Very Loud';
+  if (db > -10) return 'Loud';
+  if (db > -15) return 'Moderate';
+  return 'Quiet';
+}
+
+// ═══════════════════════════════════════════════════
+//  SANDBOX PAGE
+// ═══════════════════════════════════════════════════
+function buildSandbox() {
+  buildPresets();
+  buildSliders('sliders-core',    SLIDER_CONFIG.core);
+  buildSliders('sliders-texture', SLIDER_CONFIG.texture);
+  buildSliders('sliders-rhythm',  SLIDER_CONFIG.rhythm);
+  buildSchemes();
+  sandboxRedraw();
+}
+
+function buildPresets() {
+  const grid = document.getElementById('presetGrid');
+  grid.innerHTML = PRESETS.map((p,i) => `
+    <button class="preset-card" id="preset-${i}" onclick="applyPreset(${i})">
+      <div><span class="preset-dot" style="background:${presetColor(p.vals)}"></span>
+      <span class="preset-name">${p.emoji} ${p.name}</span></div>
+      <div class="preset-tags">${p.tags}</div>
+    </button>`).join('');
+}
+
+function presetColor(v) {
+  const e = v.energy||0.5, val = v.valence||0.5;
+  if (e>0.8 && val<0.4) return '#ff3a6e';
+  if (e>0.8 && val>0.5) return '#00e5c0';
+  if (e<0.4) return '#6060c0';
+  if (val>0.7) return '#f0c040';
+  return '#a040ff';
+}
+
+function buildSliders(containerId, configs) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = configs.map(s => `
+    <div class="slider-row">
+      <div class="slider-top">
+        <div>
+          <div class="slider-name">${s.label}</div>
+          <div class="slider-desc">${s.desc}</div>
+        </div>
+        <div class="slider-number" id="val-${s.key}">${formatVal(s.key, s.def)}</div>
+      </div>
+      <input type="range" id="sb-${s.key}"
+        min="${s.min}" max="${s.max}" step="${s.step}" value="${s.def}"
+        oninput="onSliderChange('${s.key}', this.value)"/>
+    </div>`).join('');
+}
+
+function buildSchemes() {
+  const row = document.getElementById('schemeRow');
+  row.innerHTML = Object.entries(COLOR_SCHEMES).map(([name, cols]) => {
+    const grad = `linear-gradient(135deg, ${cols[0]}, ${cols[1]}, ${cols[2]})`;
+    return `<div class="scheme-swatch tip" data-tip="${name}"
+              style="background:${grad}"
+              onclick="setScheme('${name}', this)"></div>`;
+  }).join('') + `<div class="scheme-swatch tip" data-tip="Auto (genre-based)"
+    style="background:linear-gradient(135deg,#333,#666)"
+    onclick="setScheme(null, this)">∅</div>`;
+}
+
+function setScheme(name, el) {
+  document.querySelectorAll('.scheme-swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  currentScheme = name ? COLOR_SCHEMES[name] : null;
+  sandboxRedraw();
+}
+
+function formatVal(key, v) {
+  const n = parseFloat(v);
+  if (key === 'tempo') return Math.round(n) + ' bpm';
+  if (key === 'loudness') return n.toFixed(1) + ' dB';
+  return n.toFixed(2);
+}
+
+function onSliderChange(key, val) {
+  document.getElementById(`val-${key}`).textContent = formatVal(key, val);
+  document.querySelectorAll('.preset-card').forEach(c=>c.classList.remove('active'));
+  sandboxRedraw();
+}
+
+function getSliderVals() {
+  const all = [...SLIDER_CONFIG.core, ...SLIDER_CONFIG.texture, ...SLIDER_CONFIG.rhythm];
+  const vals = {};
+  all.forEach(s => {
+    const el = document.getElementById(`sb-${s.key}`);
+    vals[s.key] = el ? parseFloat(el.value) : s.def;
+  });
+  vals.loudness_norm = (vals.loudness - (-30)) / (0 - (-30));
+  vals.tempo_norm    = Math.max(0, Math.min(1, (vals.tempo - 60) / 140));
+  return vals;
+}
+
+function setSliderVals(vals) {
+  const all = [...SLIDER_CONFIG.core, ...SLIDER_CONFIG.texture, ...SLIDER_CONFIG.rhythm];
+  all.forEach(s => {
+    const el = document.getElementById(`sb-${s.key}`);
+    const vEl = document.getElementById(`val-${s.key}`);
+    if (el && vals[s.key] !== undefined) {
+      el.value = vals[s.key];
+      if (vEl) vEl.textContent = formatVal(s.key, vals[s.key]);
+    }
+  });
+}
+
+function applyPreset(i) {
+  document.querySelectorAll('.preset-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById(`preset-${i}`)?.classList.add('active');
+  setSliderVals(PRESETS[i].vals);
+  sandboxRedraw();
+}
+
+function randomizeAll() {
+  const vals = {
+    energy:           Math.random(),
+    valence:          Math.random(),
+    danceability:     Math.random(),
+    acousticness:     Math.random(),
+    instrumentalness: Math.random() * 0.7,
+    speechiness:      Math.random() * 0.4,
+    liveness:         Math.random() * 0.6,
+    tempo:            60 + Math.random() * 140,
+    loudness:         -25 + Math.random() * 20,
+  };
+  document.querySelectorAll('.preset-card').forEach(c=>c.classList.remove('active'));
+  setSliderVals(vals);
+  sandboxRedraw();
+}
+
+function sendToSandbox(featuresStr) {
+  showPage('sandbox');
+  let features = null;
+  if (featuresStr && typeof featuresStr === 'string') {
+    try { features = JSON.parse(featuresStr); } catch(e) {}
+  } else if (featuresStr && typeof featuresStr === 'object') {
+    features = featuresStr;
+  }
+  if (features) {
+    // Need to defer until sandbox is rendered
+    setTimeout(() => {
+      setSliderVals(features);
+      sandboxRedraw();
+    }, 50);
+  }
+}
+
+let sbDrawTimer = null;
+function sandboxRedraw() {
+  clearTimeout(sbDrawTimer);
+  sbDrawTimer = setTimeout(_sandboxDraw, 16);
+}
+
+function _sandboxDraw() {
+  const canvas = document.getElementById('sandboxCanvas');
+  const vals = getSliderVals();
+  const vibe = detectVibe(vals);
+  document.getElementById('sandbox-vibe-label').textContent = vibe;
+  const genre = vibeToGenre(vibe);
+  drawArt(canvas, vals, genre, currentScheme, 42);
+}
+
+// ═══════════════════════════════════════════════════
+//  CORE ART ENGINE  (Canvas 2D generative rendering)
+// ═══════════════════════════════════════════════════
+function hexToRgb(hex) {
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function rgba(hex, a) {
+  const [r,g,b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function getPalette(genre, schemeOverride) {
+  if (schemeOverride) return schemeOverride;
+  const opts = GENRE_PALETTES[genre] || GENRE_PALETTES['edm'];
+  return opts[0];
+}
+
+function drawArt(canvas, f, genre, schemeOverride, seed) {
+  const W = 500, H = 500;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const rng = seededRng(seed || 42);
+
+  const pal   = getPalette(genre, schemeOverride);
+  const bg    = pal[pal.length - 1] || '#060608';
+  const c0    = pal[0], c1 = pal[1]||pal[0], c2 = pal[2]||pal[0], c3 = pal[3]||pal[0];
+  const accent = pal[0];
+
+  // Normalize all features to [0,1]
+  const energy       = clamp01(f.energy || 0.5);
+  const valence      = clamp01(f.valence || 0.5);
+  const dance        = clamp01(f.danceability || 0.5);
+  const acoustic     = clamp01(f.acousticness || 0.3);
+  const instrumental = clamp01(f.instrumentalness || 0.1);
+  const speech       = clamp01(f.speechiness || 0.07);
+  const liveness     = clamp01(f.liveness || 0.15);
+  const tempo_n      = clamp01(f.tempo_norm !== undefined ? f.tempo_norm : (((f.tempo||120)-60)/140));
+  const loud_n       = clamp01(f.loudness_norm !== undefined ? f.loudness_norm : ((( f.loudness||-7)+30)/30));
+
+  // ── BG fill
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Layer 1: Background gradient radial orbs (valence + energy driven)
+  const nOrbs = Math.floor(6 + energy * 18 + valence * 8);
+  for (let i = 0; i < nOrbs; i++) {
+    const cx = rng() * W;
+    const cy = rng() * H;
+    const r  = 30 + rng() * (80 + energy * 100);
+    const col = [c0, c1, c2, c3][Math.floor(rng() * 4)];
+    const alpha = 0.03 + rng() * (0.08 + valence * 0.06);
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    grad.addColorStop(0, rgba(col, alpha * 1.8));
+    grad.addColorStop(1, rgba(col, 0));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ── Layer 2: Geometric shapes (danceability + tempo)
+  const nShapes = Math.floor(4 + dance * 28 + tempo_n * 10);
+  for (let i = 0; i < nShapes; i++) {
+    const type = rng() > 0.6 ? 'circle' : rng() > 0.5 ? 'line' : 'poly';
+    const col  = [c0,c1,c2,c3][Math.floor(rng()*4)];
+    const alpha = 0.08 + rng() * 0.3;
+    const size  = 4 + rng() * (20 + tempo_n * 30);
+    const cx = rng() * W, cy = rng() * H;
+
+    ctx.strokeStyle = rgba(col, alpha);
+    ctx.fillStyle   = rgba(col, alpha * 0.4);
+    ctx.lineWidth   = 0.5 + energy * 2;
+
+    if (type === 'circle') {
+      ctx.beginPath();
+      ctx.arc(cx, cy, size, 0, Math.PI * 2);
+      rng() > 0.5 ? ctx.stroke() : ctx.fill();
+    } else if (type === 'line') {
+      const angle = rng() * Math.PI * 2;
+      const len   = 10 + rng() * (40 + dance * 60);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(angle)*len, cy + Math.sin(angle)*len);
+      ctx.lineWidth = 0.3 + dance * 1.5;
+      ctx.stroke();
+    } else {
+      const sides = 3 + Math.floor(rng() * 5);
+      const rot   = rng() * Math.PI;
+      ctx.beginPath();
+      for (let s = 0; s <= sides; s++) {
+        const a = (s / sides) * Math.PI * 2 + rot;
+        const x = cx + Math.cos(a) * size;
+        const y = cy + Math.sin(a) * size;
+        s === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      rng() > 0.4 ? ctx.fill() : ctx.stroke();
+    }
+  }
+
+  // ── Layer 3: Concentric rings from center (acousticness)
+  const nRings = Math.floor(2 + acoustic * 12 + instrumental * 5);
+  for (let i = 0; i < nRings; i++) {
+    const r     = 12 + i * (14 + acoustic * 12);
+    const alpha = Math.max(0.04, 0.5 - i * 0.04);
+    const col   = [c0,c1,c2,c3][i % 4];
+    const lw    = Math.max(0.3, 2.5 - i * 0.15 + energy * 1.5);
+    ctx.strokeStyle = rgba(col, alpha);
+    ctx.lineWidth   = lw;
+    ctx.beginPath();
+    ctx.arc(W/2, H/2, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // ── Layer 4: Radial rays from center (tempo)
+  const nRays = Math.floor(tempo_n * 80 + dance * 20);
+  for (let i = 0; i < nRays; i++) {
+    const angle  = rng() * Math.PI * 2;
+    const len    = 20 + rng() * (80 + tempo_n * 120 + energy * 60);
+    const alpha  = 0.02 + rng() * 0.12;
+    const col    = rng() > 0.5 ? c0 : c1;
+    ctx.strokeStyle = rgba(col, alpha);
+    ctx.lineWidth   = 0.3 + rng() * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(W/2, H/2);
+    ctx.lineTo(W/2 + Math.cos(angle)*len, H/2 + Math.sin(angle)*len);
+    ctx.stroke();
+  }
+
+  // ── Layer 5: Particle field (energy + instrumentalness)
+  const nParts = Math.floor(30 + energy * 280 + instrumental * 180 + liveness * 80);
+  for (let i = 0; i < nParts; i++) {
+    const px = rng() * W, py = rng() * H;
+    const dist = Math.hypot(px - W/2, py - H/2) / (W * 0.7);
+    const size  = 0.3 + rng() * (1.5 + energy * 3);
+    const alpha = Math.max(0.05, Math.min(0.8, 0.1 + (1-dist)*0.6));
+    const col   = dist < 0.3 ? c0 : dist < 0.6 ? c1 : c2;
+    ctx.fillStyle = rgba(col, alpha * 0.65);
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ── Layer 6: Speech waveform lines (speechiness)
+  if (speech > 0.08) {
+    const nLines = Math.floor(speech * 40);
+    for (let l = 0; l < nLines; l++) {
+      const y0    = H * 0.2 + l * (H * 0.6 / nLines);
+      const alpha = 0.05 + speech * 0.2;
+      ctx.strokeStyle = rgba(c2, alpha);
+      ctx.lineWidth   = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(0, y0);
+      for (let x = 0; x <= W; x += 4) {
+        const wave = Math.sin(x / (12 + rng()*20) + l) * (4 + speech * 20);
+        ctx.lineTo(x, y0 + wave);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // ── Layer 7: Central glow pulse (loudness)
+  const glowR  = 8 + loud_n * 40;
+  const glowAlpha = 0.15 + loud_n * 0.35;
+  const glowGrad = ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,glowR*3);
+  glowGrad.addColorStop(0, rgba(accent, glowAlpha));
+  glowGrad.addColorStop(0.5, rgba(accent, glowAlpha * 0.3));
+  glowGrad.addColorStop(1, rgba(accent, 0));
+  ctx.fillStyle = glowGrad;
+  ctx.beginPath();
+  ctx.arc(W/2, H/2, glowR*3, 0, Math.PI*2);
+  ctx.fill();
+
+  // Solid center dot
+  for (let r = 0; r < 5; r++) {
+    const alpha = 0.9 - r * 0.18;
+    ctx.fillStyle = rgba(accent, alpha);
+    ctx.beginPath();
+    ctx.arc(W/2, H/2, 3 + r * 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // ── Genre + BPM label (subtle)
+  ctx.font = '500 11px DM Mono, monospace';
+  ctx.fillStyle = rgba(accent, 0.35);
+  ctx.textAlign = 'center';
+  ctx.fillText(`${(genre||'').toUpperCase()}  ·  ${Math.round(f.tempo||120)} BPM`, W/2, H - 16);
+}
+
+// ═══════════════════════════════════════════════════
+//  VIBE DETECTION (rule-based ML-like classifier)
+// ═══════════════════════════════════════════════════
+function detectVibe(f) {
+  const e = f.energy||0.5, v = f.valence||0.5, d = f.danceability||0.5;
+  const a = f.acousticness||0.3, ins = f.instrumentalness||0.1;
+  const t = f.tempo_norm !== undefined ? f.tempo_norm : ((f.tempo||120)-60)/140;
+  const l = f.loudness_norm !== undefined ? f.loudness_norm : ((f.loudness||(-7))+30)/30;
+
+  if (e > 0.85 && t > 0.6)            return 'Workout Beast Mode 🔥';
+  if (e > 0.75 && v > 0.6 && d > 0.7) return 'High Energy Hype ⚡';
+  if (v > 0.75 && e > 0.5)            return 'Happy & Upbeat ☀️';
+  if (e < 0.4 && a > 0.5)             return 'Late Night Jazz 🎷';
+  if (a > 0.6 && e < 0.5 && v < 0.45) return 'Melancholic Indie 🌧';
+  if (e < 0.45 && v > 0.4)            return 'Chill & Mellow 🌿';
+  if (e < 0.4 && v < 0.35)            return 'Dark & Brooding 🌑';
+  if (ins > 0.4)                       return 'Deep Focus 🧠';
+  if (d > 0.75)                        return 'Dance Floor 💃';
+  return 'Balanced Mix 🎵';
+}
+
+function vibeToGenre(vibe) {
+  if (vibe.includes('Workout') || vibe.includes('Hype')) return 'edm';
+  if (vibe.includes('Happy'))  return 'pop';
+  if (vibe.includes('Jazz'))   return 'r&b';
+  if (vibe.includes('Indie'))  return 'rock';
+  if (vibe.includes('Chill'))  return 'latin';
+  if (vibe.includes('Dark'))   return 'rap';
+  if (vibe.includes('Dance'))  return 'latin';
+  return 'pop';
+}
+
+// ═══════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+function seededRng(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+// ═══════════════════════════════════════════════════
+//  PAGE ROUTING
+// ═══════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  if (name === 'search') document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  if (name === 'sandbox') {
+    document.querySelectorAll('.nav-tab')[1].classList.add('active');
+    sandboxRedraw();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  buildSandbox();
+  loadData();
+});
+</script>
+</body>
+</html>
