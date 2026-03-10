@@ -423,7 +423,6 @@ The frontend uses the HTML5 Canvas 2D API with a seeded pseudo-random number gen
 
 ## Resume Bullets
 
-Copy these directly into your resume or LinkedIn:
 
 ```
 • Built end-to-end ML pipeline in Python (pandas, NumPy, scikit-learn) on 28,351 real
