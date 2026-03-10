@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+     # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
 *$py.class
@@ -205,3 +205,17 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ----------------------------
+# Project-specific ignores
+# ----------------------------
+
+# Large raw datasets
+data/raw/
+
+# Model outputs and generated figures
+outputs/
+models/
+
+# Mac system files
+.DS_Store
