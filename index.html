@@ -576,13 +576,17 @@ input[type=range]::-webkit-slider-thumb:hover{
 .chart-tile:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,221,180,0.07)}
 .chart-tile img{width:100%;display:block}
 .chart-cap{
-  padding:10px 14px;border-top:1px solid var(--line);
+  padding:10px 14px 4px;border-top:1px solid var(--line);
   font-family:var(--mono);font-size:10px;color:var(--dim2);
   display:flex;align-items:center;gap:7px;
 }
 .chart-cap::before{
   content:'';width:5px;height:5px;border-radius:50%;
   background:var(--teal);flex-shrink:0;
+}
+.chart-analysis{
+  padding:4px 14px 12px;
+  font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.65;
 }
 .chart-tile.wide{grid-column:1/-1}
 
@@ -1021,22 +1025,27 @@ code{font-family:var(--mono);font-size:0.9em;
       <div class="chart-tile" onclick="lb('outputs/01_cleaning_eda.png')">
         <img src="outputs/01_cleaning_eda.png" alt="Data Cleaning EDA" loading="lazy"/>
         <div class="chart-cap">01 — Data Cleaning &amp; EDA</div>
+        <div class="chart-analysis">Distribution plots and correlation heatmap after removing 4,482 duplicate and null rows. Acousticness shows the strongest negative correlation with popularity — the more acoustic a track, the less popular it tends to be.</div>
       </div>
       <div class="chart-tile" onclick="lb('outputs/02_feature_engineering.png')">
         <img src="outputs/02_feature_engineering.png" alt="Feature Engineering" loading="lazy"/>
         <div class="chart-cap">02 — Feature Engineering</div>
+        <div class="chart-analysis">Shows the 9 new interaction features (like intensity_score and chill_score) alongside log-transformed distributions for skewed features. The before/after comparison confirms the transformations brought skewed features much closer to a normal distribution.</div>
       </div>
       <div class="chart-tile" onclick="lb('outputs/03_pca_clustering.png')">
         <img src="outputs/03_pca_clustering.png" alt="PCA Clustering" loading="lazy"/>
         <div class="chart-cap">03 — PCA &amp; KMeans Clustering</div>
+        <div class="chart-analysis">Compresses 18 audio features into 2 dimensions for visualization, then overlays KMeans clusters. The heavy genre overlap in this scatter plot explains why classification is hard — EDM and Pop overlap significantly in audio feature space.</div>
       </div>
       <div class="chart-tile" onclick="lb('outputs/04_ml_evaluation.png')">
         <img src="outputs/04_ml_evaluation.png" alt="ML Evaluation" loading="lazy"/>
         <div class="chart-cap">04 — ML Model Evaluation</div>
+        <div class="chart-analysis">Confusion matrix and model comparison bar chart. Random Forest hits 54.1% — more than 3× the 16.7% random baseline. The confusion matrix shows Rock and R&amp;B are the hardest genres to separate, which makes sense given their audio similarity.</div>
       </div>
       <div class="chart-tile wide" onclick="lb('outputs/05_generative_art.png')">
         <img src="outputs/05_generative_art.png" alt="Generative Art" loading="lazy"/>
         <div class="chart-cap">05 — Generative Art (data-driven, per genre)</div>
+        <div class="chart-analysis">Six canvases — one per genre — each drawn using that genre's average audio feature values. EDM produces dense, bright, high-energy compositions while Latin shows warmer palettes with more geometric shapes driven by high danceability.</div>
       </div>
     </div>
   </div>
