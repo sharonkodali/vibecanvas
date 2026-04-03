@@ -93,6 +93,75 @@ nav{
 .page.active{display:block}
 
 /* ════════════════════════════════════════════
+   PAGE 0 — HOME
+════════════════════════════════════════════ */
+.home-wrap{
+  max-width:760px;margin:0 auto;
+  padding:72px 32px 100px;
+  display:flex;flex-direction:column;align-items:center;gap:56px;
+}
+.home-hero{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
+.home-orb-ring{
+  width:72px;height:72px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,221,180,0.07);
+  box-shadow:0 0 0 1px rgba(0,221,180,0.18);
+}
+.home-orb{
+  width:44px;height:44px;border-radius:50%;
+  background:conic-gradient(from 180deg,var(--teal),var(--blue),var(--purp),var(--teal));
+  box-shadow:0 0 28px rgba(0,221,180,0.45);
+  animation:spin 8s linear infinite;
+}
+.home-title{font-size:44px;font-weight:800;letter-spacing:-1.5px;line-height:1.05}
+.home-sub{font-size:16px;color:var(--dim2);font-family:var(--mono)}
+.home-explainer{
+  background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+  padding:28px 32px;width:100%;
+}
+.home-explainer-lead{
+  font-size:15px;line-height:1.75;color:var(--dim2);text-align:center;
+}
+.home-explainer-lead strong{color:var(--text)}
+.home-steps{
+  display:flex;align-items:flex-start;gap:16px;width:100%;
+  flex-wrap:wrap;justify-content:center;
+}
+.home-step{
+  flex:1;min-width:180px;max-width:220px;
+  background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+  padding:20px;display:flex;flex-direction:column;gap:10px;
+}
+.home-step-icon{font-size:28px}
+.home-step-title{font-size:13px;font-weight:700;color:var(--text)}
+.home-step-desc{font-size:11px;font-family:var(--mono);color:var(--muted);line-height:1.65}
+.home-step-arrow{
+  font-size:20px;color:var(--line2);align-self:center;flex-shrink:0;
+  padding-top:4px;
+}
+@media(max-width:640px){.home-step-arrow{display:none}.home-step{max-width:100%;width:100%}}
+.home-feature-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;
+}
+@media(max-width:500px){.home-feature-grid{grid-template-columns:1fr}}
+.home-feature{
+  background:var(--bg2);border:1px solid var(--line);border-radius:8px;
+  padding:12px 16px;font-size:11px;font-family:var(--mono);color:var(--muted);
+  line-height:1.5;
+}
+.home-feature strong{color:var(--dim2)}
+.home-cta-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.home-cta{
+  padding:10px 22px;border-radius:8px;border:1px solid var(--line2);
+  background:transparent;color:var(--dim2);
+  font-family:var(--font);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .18s;
+}
+.home-cta:hover{border-color:var(--teal);color:var(--teal)}
+.home-cta.hi{background:var(--teal);color:var(--bg);border-color:var(--teal)}
+.home-cta.hi:hover{background:var(--teal2);box-shadow:0 4px 20px rgba(0,221,180,0.3)}
+
+/* ════════════════════════════════════════════
    PAGE 1 — SEARCH
 ════════════════════════════════════════════ */
 .search-layout{
@@ -548,7 +617,8 @@ code{font-family:var(--mono);font-size:0.9em;
     VibeCanvas
   </div>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('search')">🔍 Song Search</button>
+    <button class="nav-tab active" onclick="showPage('home')">🏠 Home</button>
+    <button class="nav-tab" onclick="showPage('search')">🔍 Song Search</button>
     <button class="nav-tab" onclick="showPage('sandbox')">🎛 Sandbox</button>
     <button class="nav-tab" onclick="showPage('about')">📊 About</button>
   </div>
@@ -559,9 +629,74 @@ code{font-family:var(--mono);font-size:0.9em;
 </nav>
 
 <!-- ════════════════════════════════════════════════════
+     PAGE 0 — HOME
+════════════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+<div class="home-wrap">
+
+  <div class="home-hero">
+    <div class="home-orb-ring">
+      <div class="home-orb"></div>
+    </div>
+    <h1 class="home-title">VibeCanvas</h1>
+    <p class="home-sub">Every song has a visual fingerprint. This is it.</p>
+  </div>
+
+  <div class="home-explainer">
+    <p class="home-explainer-lead">
+      Spotify measures things like <strong>energy</strong>, <strong>danceability</strong>, and <strong>acousticness</strong> for every song.
+      VibeCanvas takes those numbers and turns them into generative art — unique to each track.
+    </p>
+  </div>
+
+  <div class="home-steps">
+    <div class="home-step">
+      <div class="home-step-icon">🔍</div>
+      <div class="home-step-body">
+        <div class="home-step-title">Search a song</div>
+        <div class="home-step-desc">Browse or search 28,351 real Spotify tracks across Pop, Rap, Rock, EDM, R&amp;B, and Latin.</div>
+      </div>
+    </div>
+    <div class="home-step-arrow">→</div>
+    <div class="home-step">
+      <div class="home-step-icon">🎨</div>
+      <div class="home-step-body">
+        <div class="home-step-title">Get its art</div>
+        <div class="home-step-desc">Each track's audio features — tempo, loudness, valence, and more — drive a one-of-a-kind canvas painting.</div>
+      </div>
+    </div>
+    <div class="home-step-arrow">→</div>
+    <div class="home-step">
+      <div class="home-step-icon">🎛</div>
+      <div class="home-step-body">
+        <div class="home-step-title">Tweak it yourself</div>
+        <div class="home-step-desc">Open the Sandbox to drag sliders and watch the art redraw live. See exactly how each feature changes the visual.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-feature-grid">
+    <div class="home-feature">⚡ <strong>Energy</strong> — background density &amp; particle count</div>
+    <div class="home-feature">💛 <strong>Valence</strong> — brightness &amp; color warmth</div>
+    <div class="home-feature">💃 <strong>Danceability</strong> — shape count &amp; ring complexity</div>
+    <div class="home-feature">⏱ <strong>Tempo</strong> — radial ray density from the center</div>
+    <div class="home-feature">🎸 <strong>Acousticness</strong> — concentric ring layers</div>
+    <div class="home-feature">🔊 <strong>Loudness</strong> — central glow size &amp; intensity</div>
+  </div>
+
+  <div class="home-cta-row">
+    <button type="button" class="home-cta hi" onclick="showPage('search')">🔍 Search 28k Songs</button>
+    <button type="button" class="home-cta" onclick="showPage('sandbox')">🎛 Try the Sandbox</button>
+    <button type="button" class="home-cta" onclick="showPage('about')">📊 How it was built</button>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
      PAGE 1 — SEARCH
 ════════════════════════════════════════════════════ -->
-<div class="page active" id="page-search">
+<div class="page" id="page-search">
 <div class="search-layout">
 
   <div class="search-panel">
@@ -671,17 +806,6 @@ code{font-family:var(--mono);font-size:0.9em;
       </a>
       <button class="ab-btn" onclick="showPage('search')">🔍 Search 28k Songs</button>
       <button class="ab-btn" onclick="showPage('sandbox')">🎛 Open Sandbox</button>
-    </div>
-  </div>
-
-  <!-- Stats -->
-  <div class="ab-sec">
-    <div class="ab-eyebrow">By the numbers</div>
-    <div class="ab-stats">
-      <div class="stat"><span class="stat-n">28,351</span><span class="stat-l">Tracks Analyzed</span></div>
-      <div class="stat"><span class="stat-n">54.1%</span><span class="stat-l">RF Accuracy</span></div>
-      <div class="stat"><span class="stat-n">3×</span><span class="stat-l">Above Baseline</span></div>
-      <div class="stat"><span class="stat-n">18</span><span class="stat-l">ML Features</span></div>
     </div>
   </div>
 
@@ -1530,9 +1654,10 @@ function showPage(name) {
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(`page-${name}`).classList.add('active');
   const tabs = document.querySelectorAll('.nav-tab');
-  if (name === 'search')  tabs[0].classList.add('active');
-  if (name === 'sandbox') { tabs[1].classList.add('active'); sandboxRedraw(); }
-  if (name === 'about')   tabs[2].classList.add('active');
+  if (name === 'home')    tabs[0].classList.add('active');
+  if (name === 'search')  tabs[1].classList.add('active');
+  if (name === 'sandbox') { tabs[2].classList.add('active'); sandboxRedraw(); }
+  if (name === 'about')   tabs[3].classList.add('active');
 }
 
 function openLightbox(src) {
