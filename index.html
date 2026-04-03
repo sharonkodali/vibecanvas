@@ -438,6 +438,36 @@ input[type=range]::-webkit-slider-thumb:hover{
 }
 .btn-reset:hover{color:var(--text);border-color:var(--line2)}
 
+/* ── Sandbox explainer ── */
+.sb-explainer{margin-top:36px;border-top:1px solid var(--line);padding-top:28px}
+.sb-explainer-title{
+  font-size:13px;font-weight:800;letter-spacing:0.2px;
+  color:var(--text);margin-bottom:6px;
+}
+.sb-explainer-intro{
+  font-size:10px;font-family:var(--mono);color:var(--muted);
+  line-height:1.75;margin-bottom:20px;
+}
+.sb-explainer-intro strong{color:var(--dim2)}
+.sb-layer-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.sb-layer{
+  background:var(--bg3);border:1px solid var(--line);border-radius:8px;
+  padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:10px;
+  align-items:start;
+}
+.sb-layer-icon{font-size:16px;line-height:1;padding-top:1px}
+.sb-layer-name{
+  font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px;
+}
+.sb-layer-desc{font-size:10px;font-family:var(--mono);color:var(--muted);line-height:1.65}
+.sb-layer-desc em{color:var(--teal);font-style:normal}
+.sb-terms{display:flex;flex-direction:column;gap:8px}
+.sb-term{border-left:2px solid var(--line2);padding:8px 12px}
+.sb-term-word{font-size:10px;font-weight:700;color:var(--dim2);margin-bottom:3px}
+.sb-term-def{font-size:10px;font-family:var(--mono);color:var(--muted);line-height:1.6}
+.sb-term-def em{color:var(--teal);font-style:normal}
+.ctrl-hd--tight{margin-bottom:10px}
+
 /* ════════════════════════════════════════════
    PAGE 3 — ABOUT
 ════════════════════════════════════════════ */
@@ -781,6 +811,111 @@ code{font-family:var(--mono);font-size:0.9em;
       <button class="btn-rand" onclick="randomizeAll()">⚡ Randomize</button>
       <button class="btn-reset" onclick="sendToSandbox(null)">↺ Reset</button>
     </div>
+
+    <!-- ── How the art works ── -->
+    <div class="sb-explainer">
+      <div class="sb-explainer-title">How the art works</div>
+      <p class="sb-explainer-intro">
+        The canvas is drawn in <strong>7 layered passes</strong>, each one controlled by a different audio feature.
+        Every slider you drag rewrites one of those layers and the whole image redraws from scratch.
+        The same feature values always produce the same image — the output is <strong>deterministic</strong>,
+        driven by a seeded random number generator so the "randomness" is reproducible.
+      </p>
+
+      <div class="ctrl-hd ctrl-hd--tight">Layer map</div>
+      <div class="sb-layer-list">
+        <div class="sb-layer">
+          <div class="sb-layer-icon">🌌</div>
+          <div>
+            <div class="sb-layer-name">Layer 1 — Background orbs</div>
+            <div class="sb-layer-desc">Radial gradient blobs scattered across the canvas. <em>Energy</em> sets how many there are and how large they grow. <em>Valence</em> controls their opacity — a sad, low-valence track gets dim, near-invisible orbs.</div>
+          </div>
+        </div>
+        <div class="sb-layer">
+          <div class="sb-layer-icon">🔷</div>
+          <div>
+            <div class="sb-layer-name">Layer 2 — Geometric shapes</div>
+            <div class="sb-layer-desc">Circles, lines, and polygons scattered randomly. <em>Danceability</em> drives the count — a high-dance track gets dozens of overlapping shapes. <em>Tempo</em> controls their size.</div>
+          </div>
+        </div>
+        <div class="sb-layer">
+          <div class="sb-layer-icon">⭕</div>
+          <div>
+            <div class="sb-layer-name">Layer 3 — Concentric rings</div>
+            <div class="sb-layer-desc">Rings radiating outward from the canvas center. <em>Acousticness</em> controls how many rings appear — a fully acoustic track (like solo piano) gets dense ring layers, electronic tracks get almost none.</div>
+          </div>
+        </div>
+        <div class="sb-layer">
+          <div class="sb-layer-icon">✳️</div>
+          <div>
+            <div class="sb-layer-name">Layer 4 — Radial rays</div>
+            <div class="sb-layer-desc">Thin lines shooting out from the center point in all directions. <em>Tempo (BPM)</em> controls ray density — a 180 BPM track fires far more rays than a slow 70 BPM ballad.</div>
+          </div>
+        </div>
+        <div class="sb-layer">
+          <div class="sb-layer-icon">✨</div>
+          <div>
+            <div class="sb-layer-name">Layer 5 — Particle field</div>
+            <div class="sb-layer-desc">Tiny dots distributed across the whole image. <em>Energy</em>, <em>Instrumentalness</em>, and <em>Liveness</em> all contribute to particle count. A live, instrumental, high-energy track can produce hundreds of particles.</div>
+          </div>
+        </div>
+        <div class="sb-layer">
+          <div class="sb-layer-icon">〰️</div>
+          <div>
+            <div class="sb-layer-name">Layer 6 — Waveform lines</div>
+            <div class="sb-layer-desc">Horizontal sine waves overlaid across the image. Only appears when <em>Speechiness</em> is above ~8% — it's meant to represent spoken word content like rap verses or podcasts.</div>
+          </div>
+        </div>
+        <div class="sb-layer">
+          <div class="sb-layer-icon">💠</div>
+          <div>
+            <div class="sb-layer-name">Layer 7 — Central glow</div>
+            <div class="sb-layer-desc">A soft radial glow at the exact center of the canvas. <em>Loudness</em> (normalized from dB) sets its radius and brightness. Loud, compressed tracks get a large bloom; quiet acoustic tracks get a small, tight core.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ctrl-hd ctrl-hd--tight">Glossary</div>
+      <div class="sb-terms">
+        <div class="sb-term">
+          <div class="sb-term-word">Valence</div>
+          <div class="sb-term-def">Spotify's 0–1 measure of musical positivity. <em>1.0</em> = happy, euphoric. <em>0.0</em> = dark, depressed. It's not loudness or tempo — a loud minor-key song can still have low valence.</div>
+        </div>
+        <div class="sb-term">
+          <div class="sb-term-word">Danceability</div>
+          <div class="sb-term-def">How suitable a track is for dancing, based on tempo stability, beat strength, and rhythm regularity. A chaotic prog-rock track scores low even if it's fast.</div>
+        </div>
+        <div class="sb-term">
+          <div class="sb-term-word">Acousticness</div>
+          <div class="sb-term-def">Confidence that the track is acoustic (non-electronic). <em>1.0</em> = almost certainly acoustic (e.g. unplugged guitar). <em>0.0</em> = fully synthesized. EDM and most pop skew very low.</div>
+        </div>
+        <div class="sb-term">
+          <div class="sb-term-word">Instrumentalness</div>
+          <div class="sb-term-def">Predicts whether a track has no vocals. Values above <em>0.5</em> are treated as likely instrumental. "Ooh" and "aah" sounds count as instrumental; rap and spoken word score near zero.</div>
+        </div>
+        <div class="sb-term">
+          <div class="sb-term-word">Speechiness</div>
+          <div class="sb-term-def">Detects spoken words. Above <em>0.66</em> = probably all speech (podcast, audiobook). <em>0.33–0.66</em> = mix of music and speech (rap). Below <em>0.33</em> = music with little or no speech.</div>
+        </div>
+        <div class="sb-term">
+          <div class="sb-term-word">Liveness</div>
+          <div class="sb-term-def">Probability that the track was recorded in front of a live audience. Above <em>0.8</em> is strongly live. Studio recordings cluster below <em>0.3</em>.</div>
+        </div>
+        <div class="sb-term">
+          <div class="sb-term-word">Loudness (dB)</div>
+          <div class="sb-term-def">Average loudness across the whole track in decibels. Typically ranges from <em>−30 dB</em> (very quiet) to <em>0 dB</em> (maximum). Heavily mastered pop and EDM often hit <em>−4 to −6 dB</em>.</div>
+        </div>
+        <div class="sb-term">
+          <div class="sb-term-word">Seeded RNG</div>
+          <div class="sb-term-def">The art uses a seeded pseudo-random number generator — random-looking but fully reproducible. Given the same feature values and seed, you always get the exact same image. That's what makes each song's fingerprint consistent.</div>
+        </div>
+        <div class="sb-term">
+          <div class="sb-term-word">Generative Art</div>
+          <div class="sb-term-def">Art created by an algorithm rather than drawn by hand. The "artist" here is the rule set — 7 layers, each driven by data. The data changes, the art changes. No two songs produce the same canvas.</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </div>
