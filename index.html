@@ -1563,7 +1563,6 @@ function setGenre(genre, btn) {
 }
 
 // ── Alias old renderSearchArt to write into new artPanel ──
-const _origRenderSearchArt = renderSearchArt;
 function renderSearchArt(track) {
   const canvas = document.getElementById('searchCanvas');
   const features = {
@@ -1654,12 +1653,6 @@ function renderTrackList() {
       <div class="t-dot" style="background:${dot}"></div>
     </div>`;
   }).join('');
-}
-
-// ── Override buildSandbox to use new class names ──
-const _origBuildSandbox = buildSandbox;
-function buildSandbox() {
-  _origBuildSandbox();
 }
 
 // ── Override buildPresets ──
