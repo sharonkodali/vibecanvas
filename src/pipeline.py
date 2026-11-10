@@ -5,8 +5,8 @@ Dataset:  Kaggle "30000 Spotify Songs" — joebeachcapital
           https://www.kaggle.com/datasets/joebeachcapital/30000-spotify-songs
 Input:    data/spotify_songs.csv
 Outputs:  outputs/*.png  (5 charts)
-          spotify_cleaned.csv
-          tracks_mini.json  (for the frontend app)
+          outputs/spotify_cleaned.csv
+          site-data/tracks_0-3.json  (for the frontend app)
 
 Usage:
     pip install -r requirements.txt
@@ -860,7 +860,7 @@ print("  ✓ 05_generative_art.png")
 df.to_csv(f'{os_out}/spotify_cleaned.csv', index=False)
 print("  ✓ spotify_cleaned.csv")
 
-# ── Save tracks_mini.json for the frontend app ────────────────────
+# ── Save track data for the frontend app ────────────────────
 import json
 cols = ['track_id','track_name','track_artist','playlist_genre','playlist_subgenre',
         'track_popularity','danceability','energy','valence','tempo',
@@ -878,10 +878,15 @@ search_records = [
      'is':r['intensity_score'],'cs':r['chill_score']}
     for r in df_mini.to_dict(orient='records')
 ]
-json_path = os.path.join(REPO_ROOT, 'tracks_mini.json')
-with open(json_path, 'w') as f:
-    json.dump(search_records, f, separators=(',',':'))
-print(f"  ✓ tracks_mini.json  ({len(search_records):,} tracks)")
+# Split into 4 chunks so GitHub Pages serves them reliably (each < 2 MB).
+site_dir = os.path.join(REPO_ROOT, 'site-data')
+os.makedirs(site_dir, exist_ok=True)
+n_chunks = 4
+chunk_size = -(-len(search_records) // n_chunks)
+for i in range(n_chunks):
+    with open(os.path.join(site_dir, f'tracks_{i}.json'), 'w') as f:
+        json.dump(search_records[i * chunk_size:(i + 1) * chunk_size], f, separators=(',', ':'))
+print(f"  ✓ site-data/tracks_0-3.json  ({len(search_records):,} tracks)")
 
 print("\n" + "═"*60)
 print("  PIPELINE COMPLETE")
