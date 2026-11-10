@@ -1175,7 +1175,7 @@ const PRESETS = [
 ];
 
 // ═══════════════════════════════════════════════════
-//  LOAD DATA  (reads tracks_mini.json from same folder)
+//  LOAD DATA  (reads site-data/tracks_0-3.json)
 // ═══════════════════════════════════════════════════
 async function loadData() {
   const MAP = r => ({
@@ -1190,7 +1190,7 @@ async function loadData() {
   try {
     // Load 4 small chunks in parallel — much more reliable on GitHub Pages
     const chunks = await Promise.all(
-      [0,1,2,3].map(i => fetch('tracks_' + i + '.json').then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }))
+      [0,1,2,3].map(i => fetch('site-data/tracks_' + i + '.json').then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }))
     );
     TRACKS = chunks.flat().map(MAP);
     document.getElementById('db-badge').textContent = TRACKS.length.toLocaleString() + ' tracks';
@@ -1199,17 +1199,6 @@ async function loadData() {
     renderTrackList();
     return;
   } catch(e) { console.log('Chunks failed, trying single file...', e); }
-  try {
-    const res = await fetch('tracks_mini.json');
-    if (!res.ok) throw new Error(res.status);
-    const raw = await res.json();
-    TRACKS = raw.map(MAP);
-    document.getElementById('db-badge').textContent = TRACKS.length.toLocaleString() + ' tracks';
-    document.getElementById('search-meta').textContent = TRACKS.length.toLocaleString() + ' tracks · type to search';
-    filteredTracks = TRACKS.slice(0, 80);
-    renderTrackList();
-    return;
-  } catch(e) { console.log('Single file failed:', e); }
   document.getElementById('db-badge').textContent = 'demo mode';
   document.getElementById('search-meta').textContent = 'Could not load track data';
   TRACKS = generateDemoTracks();
